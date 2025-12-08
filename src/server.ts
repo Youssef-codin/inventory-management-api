@@ -2,6 +2,7 @@ import express from "express"
 import helmet from "helmet";
 import errorHandler from "./middleware/errorHandler";
 import pino from "pino";
+import { validate } from "./middleware/validate";
 
 const app = express();
 
@@ -18,6 +19,7 @@ app.use((req, res, next) => {
     next();
 });
 
+app.use(validate);
 app.use(errorHandler);
 
 app.listen(port, () => {

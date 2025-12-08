@@ -2,14 +2,14 @@ import { Request, Response, NextFunction } from "express";
 import { logger } from "../server";
 import { ZodError } from "zod";
 import { AppError } from "../errors/AppError";
-import { fail } from "../dto/api/ApiResponse";
+import { fail } from "../validation/api/ApiResponse";
 
 export enum ERROR_CODE {
     UNKNOWN_ERROR = "UNKNOWN_ERROR",
     VALIDATION_FAILED = "VALIDATION_FAILED",
 }
 
-function getErrorMessage(error: unknown): string {
+export function getErrorMessage(error: unknown): string {
     if (error instanceof Error) {
         return error.message;
     }
