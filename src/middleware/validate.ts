@@ -1,10 +1,10 @@
-import { Request, Response, NextFunction } from "express";
-import { ZodObject } from "zod";
-import { fail } from "../validation/api/ApiResponse";
-import { ERROR_CODE, getErrorMessage } from "./errorHandler";
+import { Request, Response, NextFunction } from 'express';
+import zod, { ZodType } from 'zod';
+import { ERROR_CODE, getErrorMessage } from './errorHandler';
+import { fail } from '../util/apiresponse';
 
 export const validate =
-    (schema: ZodObject) =>
+    (schema: ZodType) =>
         (req: Request, res: Response, next: NextFunction) => {
             try {
                 schema.parse({
@@ -12,11 +12,8 @@ export const validate =
                     body: req.body,
                     query: req.query,
                 });
-
                 return next();
-            } catch (e: any) {
-                return res.status(400)
-                    .json(fail(getErrorMessage(e),
-                        ERROR_CODE.VALIDATION_FAILED));
+            } catch (e: unknown) {
+                return res.status(400).json(fail(getErrorMessage(e), ERROR_CODE.VALIDATION_FAILED));
             }
         };

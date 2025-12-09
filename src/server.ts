@@ -1,25 +1,21 @@
 import express from "express"
 import helmet from "helmet";
 import errorHandler from "./middleware/errorHandler";
-import pino from "pino";
-import { validate } from "./middleware/validate";
+import log, { logger } from "./middleware/logger";
 
 const app = express();
 
-export const logger = pino({ transport: { target: "pino-pretty", options: { colorize: true } } });
 const port = process.env.PORT;
 
-app.use(helmet()); // basic security
-app.use(express.urlencoded({ extended: true })) // Read body of requests
-app.use(express.json()) // res and req are in json
+app.use(helmet());
+app.use(express.urlencoded({ extended: true }))
+app.use(express.json())
 
-// logging middleware
-app.use((req, res, next) => {
-    logger.info({ method: req.method, url: req.url });
-    next();
-});
+//-- middleware --
+app.use(log);
+//-- routes -- 
 
-app.use(validate);
+//-- error handler -- 
 app.use(errorHandler);
 
 app.listen(port, () => {

@@ -1,8 +1,7 @@
 import { Request, Response, NextFunction } from "express";
-import { logger } from "../server";
-import { ZodError } from "zod";
 import { AppError } from "../errors/AppError";
-import { fail } from "../validation/api/ApiResponse";
+import { fail } from "../util/apiresponse";
+import { logger } from "./logger";
 
 export enum ERROR_CODE {
     UNKNOWN_ERROR = "UNKNOWN_ERROR",
@@ -41,13 +40,7 @@ export default function errorHandler(
     if (error instanceof AppError) {
         status = error.status;
         code = error.code;
-    } else if (error instanceof ZodError) {
-        status = 400;
-        message = "Validation failed"
-        code = ERROR_CODE.VALIDATION_FAILED;
-    }
-
-    else {
+    } else {
         logger.error({ err: error, path: req.path }, "Unhandled Error");
     }
 

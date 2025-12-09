@@ -1,4 +1,4 @@
-import { ERROR_CODE } from "../../middleware/errorHandler"
+import { ERROR_CODE } from "../middleware/errorHandler"
 
 export type ApiResponse<T = any> = {
     success: boolean,
