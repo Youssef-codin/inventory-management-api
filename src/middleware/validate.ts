@@ -1,19 +1,19 @@
 import { Request, Response, NextFunction } from 'express';
-import zod, { ZodType } from 'zod';
-import { ERROR_CODE, getErrorMessage } from './errorHandler';
-import { fail } from '../util/apiresponse';
+import z from 'zod';
+import { ERROR_CODE } from './errorHandler';
+import { fail, respond } from '../util/apiresponse';
 
 export const validate =
-    (schema: ZodType) =>
+    (schema: z.ZodObject) =>
         (req: Request, res: Response, next: NextFunction) => {
-            try {
-                schema.parse({
-                    params: req.params,
-                    body: req.body,
-                    query: req.query,
-                });
-                return next();
-            } catch (e: unknown) {
-                return res.status(400).json(fail(getErrorMessage(e), ERROR_CODE.VALIDATION_FAILED));
+            const result = schema.safeParse({
+                params: req.params,
+                body: req.body,
+                query: req.query,
+            });
+
+            if (!result.success) {
+                return respond(res, 400, fail(z.prettifyError(result.error), ERROR_CODE.VALIDATION_FAILED));
             }
+            return next();
         };

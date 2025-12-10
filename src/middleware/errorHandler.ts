@@ -1,11 +1,12 @@
 import { Request, Response, NextFunction } from "express";
 import { AppError } from "../errors/AppError";
-import { fail } from "../util/apiresponse";
+import { fail, respond } from "../util/apiresponse";
 import { logger } from "./logger";
 
 export enum ERROR_CODE {
     UNKNOWN_ERROR = "UNKNOWN_ERROR",
     VALIDATION_FAILED = "VALIDATION_FAILED",
+    NOT_FOUND = "NOT_FOUND"
 }
 
 export function getErrorMessage(error: unknown): string {
@@ -22,12 +23,7 @@ export function getErrorMessage(error: unknown): string {
     return "An error occured. Please view logs for more details.";
 }
 
-export default function errorHandler(
-    error: unknown,
-    req: Request,
-    res: Response,
-    next: NextFunction
-) {
+export default function errorHandler(error: unknown, req: Request, res: Response, next: NextFunction) {
     if (res.headersSent) {
         next(error);
         return;
@@ -44,5 +40,5 @@ export default function errorHandler(
         logger.error({ err: error, path: req.path }, "Unhandled Error");
     }
 
-    res.status(status).json(fail(message, code));
+    return respond(res, status, fail(message, code));
 }

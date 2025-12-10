@@ -2,6 +2,7 @@ import express from "express"
 import helmet from "helmet";
 import errorHandler from "./middleware/errorHandler";
 import log, { logger } from "./middleware/logger";
+import productRouter from "./modules/product/product.route";
 
 const app = express();
 
@@ -14,7 +15,7 @@ app.use(express.json())
 //-- middleware --
 app.use(log);
 //-- routes -- 
-
+app.use("/product", productRouter);
 //-- error handler -- 
 app.use(errorHandler);
 

@@ -1,4 +1,5 @@
 import { ERROR_CODE } from "../middleware/errorHandler"
+import { Response } from "express"
 
 export type ApiResponse<T = any> = {
     success: boolean,
@@ -20,3 +21,6 @@ export const fail = (message: string, code: ERROR_CODE):
         error: { message, code },
     });
 
+export function respond(res: Response, status: number, response: ApiResponse) {
+    res.status(status).json(response);
+}
