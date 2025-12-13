@@ -1,8 +1,10 @@
+import { AppError } from "../../errors/AppError";
+import { ERROR_CODE } from "../../middleware/errorHandler";
 import { prisma } from "../../util/prisma";
 import { CreateProductInput } from "./product.schema";
 
 export async function getProductById(id: string) {
-    return await prisma.product.findUnique({
+    const product = await prisma.product.findUnique({
         where: {
             id: id,
         },
@@ -11,6 +13,10 @@ export async function getProductById(id: string) {
         }
     });
 
+    if (!product)
+        throw new AppError(404, "Product with such ID not found", ERROR_CODE.NOT_FOUND);
+
+    return product;
 }
 
 export async function getAllProducts() {
