@@ -14,7 +14,7 @@ export async function getProductByNameHandler(req: Request<{}, {}, {}, GetProduc
     return respond(res, 200, ok(product));
 }
 
-export async function getProductByIdHandler(req: Request<GetProductByIdInput, {}, {}>, res: Response) {
+export async function getProductByIdHandler(req: Request<GetProductByIdInput, {}, {}, {}>, res: Response) {
     const getId = req.params.id;
     const product = await getProductById(getId);
     if (!product)
@@ -23,7 +23,7 @@ export async function getProductByIdHandler(req: Request<GetProductByIdInput, {}
     return respond(res, 200, ok(product));
 }
 
-export function createProductHandler(req: Request<{}, {}, CreateProductInput>) {
+export function createProductHandler(req: Request<{}, {}, CreateProductInput, {}>) {
 
 }
 
