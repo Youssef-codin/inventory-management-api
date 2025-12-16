@@ -7,17 +7,16 @@ const BaseProductSchema = z.object({
     id: z.uuid(),
     name: z.string(),
     category: z.string(),
-    unitPrice: z.instanceof(Decimal),
+    unitPrice: z.union([
+        z.instanceof(Decimal),
+        z.number().transform(n => new Decimal(n)),
+    ]),
     stockQuantity: z.number().int().default(0),
     reorderLevel: z.number().int()
+
 }) satisfies z.ZodType<Product>;
 
 export const CreateProductSchema = inBody(BaseProductSchema.omit({
-    id: true,
-}));
-
-export const UpdateProductSchema = inBody(BaseProductSchema);
-export const DeleteProductSchema = inParams(BaseProductSchema.pick({
     id: true,
 }));
 
@@ -29,8 +28,21 @@ export const GetProductByNameSchema = inQuery(BaseProductSchema.pick({
     name: true,
 }));
 
+export const UpdateProductSchema = inBody(BaseProductSchema.omit({
+    id: true,
+}));
+
+export const UpdateProductParamsSchema = inParams(BaseProductSchema.pick({
+    id: true,
+}));
+
+export const DeleteProductSchema = inParams(BaseProductSchema.pick({
+    id: true,
+}));
+
+export type CreateProductInput = z.infer<typeof CreateProductSchema.shape.body>
 export type GetProductByIdInput = z.infer<typeof GetProductByIdSchema.shape.params>
 export type GetProductByNameInput = z.infer<typeof GetProductByNameSchema.shape.query>
-export type CreateProductInput = z.infer<typeof CreateProductSchema.shape.body>
+export type UpdateProductInput = z.infer<typeof UpdateProductSchema.shape.body>
+export type UpdateProductParamsInput = z.infer<typeof UpdateProductParamsSchema.shape.params>
 export type DeleteProductInput = z.infer<typeof DeleteProductSchema.shape.params>
-export type UpdateProductInput = z.infer<typeof UpdateProductSchema>
