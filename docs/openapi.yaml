@@ -1,0 +1,697 @@
+openapi: 3.0.0
+info:
+  title: Inventory Management API
+  version: 1.0.0
+  description: API for managing inventory, products, orders, and suppliers.
+servers:
+  - url: http://localhost:3000
+    description: Local development server
+
+paths:
+  # --------------------
+  # Product Routes
+  # --------------------
+  /product/add:
+    post:
+      summary: Create a new product
+      tags: [Product]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateProductInput'
+      responses:
+        '201':
+          description: Product created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Product'
+        '400':
+          description: Validation error
+
+  /product/search:
+    get:
+      summary: Search products by name
+      tags: [Product]
+      parameters:
+        - in: query
+          name: name
+          schema:
+            type: string
+          required: true
+          description: Name substring to search for
+      responses:
+        '200':
+          description: List of matching products
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Product'
+
+  /product/{id}:
+    get:
+      summary: Get a product by ID
+      tags: [Product]
+      parameters:
+        - in: path
+          name: id
+          schema:
+            type: string
+            format: uuid
+          required: true
+      responses:
+        '200':
+          description: Product details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Product'
+        '404':
+          description: Product not found
+
+    put:
+      summary: Update a product
+      tags: [Product]
+      parameters:
+        - in: path
+          name: id
+          schema:
+            type: string
+            format: uuid
+          required: true
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateProductInput'
+      responses:
+        '200':
+          description: Product updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Product'
+        '404':
+          description: Product not found
+
+    delete:
+      summary: Delete a product
+      tags: [Product]
+      parameters:
+        - in: path
+          name: id
+          schema:
+            type: string
+            format: uuid
+          required: true
+      responses:
+        '204':
+          description: Product deleted successfully
+
+  # --------------------
+  # Admin Routes
+  # --------------------
+  /admin/add:
+    post:
+      summary: Create a new admin
+      tags: [Admin]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateAdminInput'
+      responses:
+        '201':
+          description: Admin created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Admin'
+
+  /admin/search:
+    get:
+      summary: Get admin by username
+      tags: [Admin]
+      parameters:
+        - in: query
+          name: username
+          schema:
+            type: string
+          required: true
+      responses:
+        '200':
+          description: Admin details
+          content:
+            application/json:
+              schema:
+                type: array # Service returns array based on schema check (findMany usually) or single? Schema said "GetAdminByName" -> "username". Service signature: getAdminByName.
+                items: 
+                  $ref: '#/components/schemas/Admin' 
+
+  /admin/{id}:
+    get:
+      summary: Get admin by ID
+      tags: [Admin]
+      parameters:
+        - in: path
+          name: id
+          schema:
+            type: string
+            format: uuid
+          required: true
+      responses:
+        '200':
+          description: Admin details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Admin'
+
+    put:
+      summary: Update admin
+      tags: [Admin]
+      parameters:
+        - in: path
+          name: id
+          schema:
+            type: string
+            format: uuid
+          required: true
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateAdminInput'
+      responses:
+        '200':
+          description: Admin updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Admin'
+
+    delete:
+      summary: Delete admin
+      tags: [Admin]
+      parameters:
+        - in: path
+          name: id
+          schema:
+            type: string
+            format: uuid
+          required: true
+      responses:
+        '204':
+          description: Admin deleted
+
+  # --------------------
+  # Customer Order Routes
+  # --------------------
+  /customer-order/add:
+    post:
+      summary: Create customer order
+      tags: [Customer Order]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateCustomerOrderInput'
+      responses:
+        '201':
+          description: Order created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CustomerOrder'
+
+  /customer-order/{id}:
+    get:
+      summary: Get customer order by ID
+      tags: [Customer Order]
+      parameters:
+        - in: path
+          name: id
+          schema:
+            type: string
+            format: uuid
+          required: true
+      responses:
+        '200':
+          description: Order details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CustomerOrder'
+
+    put:
+      summary: Update customer order
+      tags: [Customer Order]
+      parameters:
+        - in: path
+          name: id
+          schema:
+            type: string
+            format: uuid
+          required: true
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateCustomerOrderInput'
+      responses:
+        '200':
+          description: Order updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CustomerOrder'
+
+    delete:
+      summary: Delete customer order
+      tags: [Customer Order]
+      parameters:
+        - in: path
+          name: id
+          schema:
+            type: string
+            format: uuid
+          required: true
+      responses:
+        '204':
+          description: Order deleted
+
+  # --------------------
+  # Purchase Order Routes
+  # --------------------
+  /purchase-order/add:
+    post:
+      summary: Create purchase order
+      tags: [Purchase Order]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreatePurchaseOrderInput'
+      responses:
+        '201':
+          description: Order created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PurchaseOrder'
+
+  /purchase-order/{id}:
+    get:
+      summary: Get purchase order by ID
+      tags: [Purchase Order]
+      parameters:
+        - in: path
+          name: id
+          schema:
+            type: string
+            format: uuid
+          required: true
+      responses:
+        '200':
+          description: Order details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PurchaseOrder'
+
+    put:
+      summary: Update purchase order
+      tags: [Purchase Order]
+      parameters:
+        - in: path
+          name: id
+          schema:
+            type: string
+            format: uuid
+          required: true
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdatePurchaseOrderInput'
+      responses:
+        '200':
+          description: Order updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PurchaseOrder'
+
+    delete:
+      summary: Delete purchase order
+      tags: [Purchase Order]
+      parameters:
+        - in: path
+          name: id
+          schema:
+            type: string
+            format: uuid
+          required: true
+      responses:
+        '204':
+          description: Order deleted
+
+  # --------------------
+  # Supplier Routes
+  # --------------------
+  /supplier/add:
+    post:
+      summary: Create supplier
+      tags: [Supplier]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateSupplierInput'
+      responses:
+        '201':
+          description: Supplier created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Supplier'
+
+  /supplier/{id}:
+    get:
+      summary: Get supplier by ID
+      tags: [Supplier]
+      parameters:
+        - in: path
+          name: id
+          schema:
+            type: string
+            format: uuid
+          required: true
+      responses:
+        '200':
+          description: Supplier details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Supplier'
+
+    put:
+      summary: Update supplier
+      tags: [Supplier]
+      parameters:
+        - in: path
+          name: id
+          schema:
+            type: string
+            format: uuid
+          required: true
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateSupplierInput'
+      responses:
+        '200':
+          description: Supplier updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Supplier'
+
+    delete:
+      summary: Delete supplier
+      tags: [Supplier]
+      parameters:
+        - in: path
+          name: id
+          schema:
+            type: string
+            format: uuid
+          required: true
+      responses:
+        '204':
+          description: Supplier deleted
+
+
+components:
+  schemas:
+    # --------------------
+    # Product Schemas
+    # --------------------
+    Product:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        category:
+          type: string
+        unitPrice:
+          type: number
+        stockQuantity:
+          type: integer
+        reorderLevel:
+          type: integer
+
+    CreateProductInput:
+      type: object
+      required:
+        - name
+        - category
+        - unitPrice
+        - reorderLevel
+      properties:
+        name:
+          type: string
+        category:
+          type: string
+        unitPrice:
+          type: number
+        stockQuantity:
+          type: integer
+          default: 0
+        reorderLevel:
+          type: integer
+
+    UpdateProductInput:
+      type: object
+      properties:
+        name:
+          type: string
+        category:
+          type: string
+        unitPrice:
+          type: number
+        stockQuantity:
+          type: integer
+        reorderLevel:
+          type: integer
+
+    # --------------------
+    # Admin Schemas
+    # --------------------
+    Admin:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        username:
+          type: string
+
+    CreateAdminInput:
+      type: object
+      required:
+        - username
+        - password
+      properties:
+        username:
+          type: string
+        password:
+          type: string
+          minLength: 6
+
+    UpdateAdminInput:
+      type: object
+      properties:
+        username:
+          type: string
+        password:
+          type: string
+          minLength: 6
+
+    # --------------------
+    # Customer Order Schemas
+    # --------------------
+    CustomerOrder:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        orderDate:
+          type: string
+          format: date-time
+        totalAmount:
+          type: number
+        adminId:
+          type: string
+          format: uuid
+
+    CreateCustomerOrderInput:
+      type: object
+      required:
+        - orderDate
+        - totalAmount
+        - adminId
+      properties:
+        orderDate:
+          type: string
+          format: date-time
+        totalAmount:
+          type: number
+        adminId:
+          type: string
+          format: uuid
+
+    UpdateCustomerOrderInput:
+      type: object
+      properties:
+        orderDate:
+          type: string
+          format: date-time
+        totalAmount:
+          type: number
+        adminId:
+          type: string
+          format: uuid
+
+    # --------------------
+    # Purchase Order Schemas
+    # --------------------
+    PurchaseOrder:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        orderDate:
+          type: string
+          format: date-time
+        totalAmount:
+          type: number
+        arrived:
+          type: boolean
+        adminId:
+          type: string
+          format: uuid
+        supplierId:
+          type: string
+          format: uuid
+
+    CreatePurchaseOrderInput:
+      type: object
+      required:
+        - orderDate
+        - totalAmount
+        - arrived
+        - adminId
+        - supplierId
+      properties:
+        orderDate:
+          type: string
+          format: date-time
+        totalAmount:
+          type: number
+        arrived:
+          type: boolean
+        adminId:
+          type: string
+          format: uuid
+        supplierId:
+          type: string
+          format: uuid
+
+    UpdatePurchaseOrderInput:
+      type: object
+      properties:
+        orderDate:
+          type: string
+          format: date-time
+        totalAmount:
+          type: number
+        arrived:
+          type: boolean
+        adminId:
+          type: string
+          format: uuid
+        supplierId:
+          type: string
+          format: uuid
+
+    # --------------------
+    # Supplier Schemas
+    # --------------------
+    Supplier:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+          nullable: true
+        contactEmail:
+          type: string
+          format: email
+        phone:
+          type: string
+        address:
+          type: string
+
+    CreateSupplierInput:
+      type: object
+      required:
+        - contactEmail
+        - phone
+        - address
+      properties:
+        name:
+          type: string
+          nullable: true
+        contactEmail:
+          type: string
+          format: email
+        phone:
+          type: string
+        address:
+          type: string
+
+    UpdateSupplierInput:
+      type: object
+      properties:
+        name:
+          type: string
+          nullable: true
+        contactEmail:
+          type: string
+          format: email
+        phone:
+          type: string
+        address:
+          type: string
