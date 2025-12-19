@@ -1,4 +1,5 @@
 import { Request, Response, NextFunction } from "express";
+import jwt from "jsonwebtoken";
 import { AppError } from "../errors/AppError";
 import { fail, respond } from "../util/apiresponse";
 import { logger } from "./logger";
@@ -6,7 +7,10 @@ import { logger } from "./logger";
 export enum ERROR_CODE {
     UNKNOWN_ERROR = "UNKNOWN_ERROR",
     VALIDATION_FAILED = "VALIDATION_FAILED",
-    NOT_FOUND = "NOT_FOUND"
+    NOT_FOUND = "NOT_FOUND",
+    UNAUTHENTICATED = "UNAUTHENTICATED",
+    USERNAME_TAKEN = "USERNAME_TAKEN",
+    INVALID_CREDENTIALS = "INVALID_CREDENTIALS",
 }
 
 export function getErrorMessage(error: unknown): string {
@@ -36,6 +40,14 @@ export default function errorHandler(error: unknown, req: Request, res: Response
     if (error instanceof AppError) {
         status = error.status;
         code = error.code;
+    } else if (error instanceof jwt.TokenExpiredError) {
+        status = 401;
+        message = "Token expired";
+        code = ERROR_CODE.UNAUTHENTICATED;
+    } else if (error instanceof jwt.JsonWebTokenError) {
+        status = 401;
+        message = "Invalid token";
+        code = ERROR_CODE.UNAUTHENTICATED;
     } else {
         logger.error({ err: error, path: req.path }, "Unhandled Error");
     }
