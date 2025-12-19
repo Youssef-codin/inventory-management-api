@@ -9,6 +9,53 @@ servers:
 
 paths:
   # --------------------
+  # Auth Routes
+  # --------------------
+  /auth/register:
+    post:
+      summary: Register a new admin user
+      tags: [Auth]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AuthCredentials'
+      responses:
+        '201':
+          description: Admin registered successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Admin'
+        '400':
+          description: Username taken or validation error
+
+  /auth/login:
+    post:
+      summary: Login and retrieve JWT token
+      tags: [Auth]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AuthCredentials'
+      responses:
+        '200':
+          description: Login successful
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: string
+                    description: JWT Token
+        '401':
+          description: Invalid credentials
+
+  # --------------------
   # Product Routes
   # --------------------
   /product/add:
@@ -150,7 +197,7 @@ paths:
           content:
             application/json:
               schema:
-                type: array # Service returns array based on schema check (findMany usually) or single? Schema said "GetAdminByName" -> "username". Service signature: getAdminByName.
+                type: array 
                 items: 
                   $ref: '#/components/schemas/Admin' 
 
@@ -448,6 +495,20 @@ paths:
 
 components:
   schemas:
+    # --------------------
+    # Auth Schemas
+    # --------------------
+    AuthCredentials:
+      type: object
+      required:
+        - username
+        - password
+      properties:
+        username:
+          type: string
+        password:
+          type: string
+
     # --------------------
     # Product Schemas
     # --------------------
