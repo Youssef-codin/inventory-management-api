@@ -1,0 +1,41 @@
+services:
+  server:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    environment:
+      NODE_ENV: development
+      DATABASE_URL: postgresql://joe-arch:password@postgres:5432/inventoryManagement?schema=public
+      JWT_SECRET: ${JWT_SECRET}
+    command: npx tsx --watch src/server.ts
+    ports:
+      - "3000:3000"
+    depends_on:
+      db:
+        condition: service_healthy
+    develop:
+      watch:
+        - action: sync
+          path: .
+          target: /usr/src/app
+        - action: rebuild
+          path: package.json
+
+  db:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_USER: joe-arch
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: inventoryManagement
+    ports:
+      - "5433:5432"
+    volumes:
+      - db-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U joe-arch -d inventoryManagement"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  db-data:

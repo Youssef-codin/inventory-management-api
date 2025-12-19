@@ -11,26 +11,6 @@ paths:
   # --------------------
   # Auth Routes
   # --------------------
-  /auth/register:
-    post:
-      summary: Register a new admin user
-      tags: [Auth]
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/AuthCredentials'
-      responses:
-        '201':
-          description: Admin registered successfully
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Admin'
-        '400':
-          description: Username taken or validation error
-
   /auth/login:
     post:
       summary: Login and retrieve JWT token

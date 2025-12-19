@@ -67,6 +67,6 @@ export async function deleteProduct(id: string) {
         }
     });
 
-    return productToDelete;
+    return true;
 }
 

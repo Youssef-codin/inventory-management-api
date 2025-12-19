@@ -10,6 +10,7 @@ import purchaseOrderRouter from "./modules/purchaseorder/purchaseorder.router";
 import supplierRouter from "./modules/supplier/supplier.router";
 import { fail, respond } from "./util/apiresponse";
 import { authenticate } from "./middleware/authenticate";
+import { initDb } from "./util/db.init";
 
 const app = express();
 
@@ -36,6 +37,15 @@ app.use((req, res) => {
 //-- error handler -- 
 app.use(errorHandler);
 
-app.listen(port, () => {
-    logger.info(`Example app listening on port ${port}`)
+async function start() {
+    await initDb();
+
+    app.listen(port, () => {
+        logger.info(`App listening on port ${port}`);
+    });
+}
+
+start().catch(err => {
+    logger.error("Failed to start:", err);
+    process.exit(1);
 });

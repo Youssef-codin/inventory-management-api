@@ -1,23 +1,94 @@
 import { AppError } from "../../errors/AppError";
 import { ERROR_CODE } from "../../middleware/errorHandler";
+import { hashPassword } from "../../util/auth";
+import { prisma } from "../../util/prisma";
 import { CreateAdminInput, UpdateAdminInput } from "./admin.schema";
 
+async function findById(id: string) {
+    return await prisma.admin.findUnique({
+        where: {
+            id
+        }
+    });
+}
+
 export async function getAdminById(id: string) {
-    throw new AppError(501, "Not implemented", ERROR_CODE.UNKNOWN_ERROR);
+    const admin = await prisma.admin.findUnique({
+        where: {
+            id
+        }, omit: {
+            id: true
+        }
+    });
+
+    if (!admin)
+        throw new AppError(404, "Admin Not Found", ERROR_CODE.NOT_FOUND);
+
+    return admin;
 }
 
 export async function getAdminByName(username: string) {
-    throw new AppError(501, "Not implemented", ERROR_CODE.UNKNOWN_ERROR);
+    return await prisma.admin.findMany({
+        where: {
+            username: {
+                contains: username,
+                mode: "insensitive"
+            }
+        }
+    });
 }
 
 export async function createAdmin(data: CreateAdminInput) {
-    throw new AppError(501, "Not implemented", ERROR_CODE.UNKNOWN_ERROR);
+    const exists = await prisma.admin.findUnique({
+        where: {
+            username: data.username,
+        }
+    });
+
+    if (exists)
+        throw new AppError(409, "Username is already taken", ERROR_CODE.USERNAME_TAKEN)
+
+    return await prisma.admin.create({
+        data: {
+            username: data.username,
+            passwordHash: await hashPassword(data.password)
+        },
+        omit: {
+            passwordHash: true
+        }
+    });
 }
 
 export async function updateAdmin(id: string, data: UpdateAdminInput) {
-    throw new AppError(501, "Not implemented", ERROR_CODE.UNKNOWN_ERROR);
+    const exists = await findById(id);
+
+    if (!exists)
+        throw new AppError(404, "Admin with this Id does not exist", ERROR_CODE.NOT_FOUND)
+
+    return await prisma.admin.update({
+        where: {
+            id
+        }, data: {
+            username: data.username,
+            passwordHash: await hashPassword(data.password)
+        }, omit: {
+            passwordHash: true
+        }
+    });
 }
 
+
 export async function deleteAdmin(id: string) {
-    throw new AppError(501, "Not implemented", ERROR_CODE.UNKNOWN_ERROR);
+    const exists = await findById(id);
+
+    if (!exists)
+        throw new AppError(404, "Admin with this Id does not exist", ERROR_CODE.NOT_FOUND)
+
+    await prisma.admin.delete({
+        where: {
+            id
+        }
+    });
+
+    return true;
 }
