@@ -72,7 +72,13 @@ Here is a list of available npm scripts to help you develop and maintain the pro
 -   **`npm run type-check`**: Runs the TypeScript compiler to check for type errors without emitting files.
 -   **`npm run migrate <name>`**: Runs Prisma migrations. Replace `<name>` with a descriptive name for your migration.
 -   **`npm run generate`**: Generates the Prisma Client based on your `schema.prisma`.
+-   **`npm run seed`**: Clears the database and seeds it with demo data (admin, suppliers, products, orders).
 -   **`npm run studio`**: Opens Prisma Studio, a visual editor for your database data.
+
+## API Documentation
+
+The API specification is available in the `docs/` directory:
+-   [OpenAPI Specification](docs/openapi.yaml): Use this file with tools like Swagger UI or Postman to explore and test the API endpoints.
 
 ## Project Structure
 
