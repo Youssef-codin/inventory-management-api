@@ -10,5 +10,6 @@ export async function initDb() {
         };
 
         await createAdmin(adminData);
+        console.log("Seeded admin user.");
     }
 }

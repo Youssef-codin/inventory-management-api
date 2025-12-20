@@ -1,12 +1,29 @@
 import { AppError } from "../../errors/AppError";
 import { ERROR_CODE } from "../../middleware/errorHandler";
 import { prisma } from "../../util/prisma";
-import { CreateProductInput, DeleteProductInput, GetProductByIdInput, UpdateProductInput, UpdateProductParamsInput } from "./product.schema";
+import { CreateProductInput, DeleteProductInput, GetProductByIdInput, UpdateProductInput, UpdateProductParamsInput, UpdateStockInput } from "./product.schema";
 
 async function findProductById(id: GetProductByIdInput['id']) {
     return await prisma.product.findUnique({
         where: {
             id
+        }
+    });
+}
+
+export async function updateProductStock(id: UpdateProductParamsInput['id'], amount: UpdateStockInput['amount']) {
+    const product = await findProductById(id);
+
+    if (!product) {
+        throw new AppError(404, "Product with such ID not found", ERROR_CODE.NOT_FOUND);
+    }
+
+    return await prisma.product.update({
+        where: {
+            id
+        },
+        data: {
+            stockQuantity: amount
         }
     });
 }
@@ -22,6 +39,16 @@ export async function getProductById(id: GetProductByIdInput['id']) {
 
 export async function getAllProducts() {
     return await prisma.product.findMany();
+}
+
+export async function getLowStockProducts() {
+    return await prisma.product.findMany({
+        where: {
+            stockQuantity: {
+                lte: prisma.product.fields.reorderLevel
+            }
+        }
+    });
 }
 
 export async function getProductByName(search: string) {

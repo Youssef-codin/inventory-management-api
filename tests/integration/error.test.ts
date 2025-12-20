@@ -1,52 +1,88 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import request from 'supertest';
 import app from '../../src/app';
-import { createTestAdmin, getAuthToken, resetDb } from '../helpers';
+import { resetDb, createTestAdmin, getAuthToken } from '../helpers';
+import jwt from 'jsonwebtoken';
 
 describe('Global Error Handling', () => {
   let authToken: string;
+  let adminId: string;
 
   beforeEach(async () => {
     await resetDb();
     const admin = await createTestAdmin();
     authToken = getAuthToken(admin.id, admin.username);
+    adminId = admin.id;
   });
 
-  it('should return 404 for unknown routes', async () => {
+  it('should return 404 JSON for unknown routes', async () => {
     const response = await request(app)
-      .get('/api/unknown/route')
+      .get('/api/does-not-exist')
       .set('Authorization', `Bearer ${authToken}`);
     
     expect(response.status).toBe(404);
-    expect(response.body).toEqual({
-      status: 'error',
-      message: 'Route not found',
-      code: 'NOT_FOUND',
-    });
+    expect(response.type).toBe('application/json');
+    expect(response.body.success).toBe(false);
+    expect(response.body.error.code).toBe('NOT_FOUND');
   });
 
-  it('should return 400 for invalid JSON body', async () => {
+  it('should return 401 for an invalid JWT', async () => {
+    const invalidToken = 'invalid.jwt.token';
     const response = await request(app)
-      .post('/auth/login')
-      .set('Content-Type', 'application/json')
-      .send('{"invalid": json');
+      .get('/product') // Any protected route
+      .set('Authorization', `Bearer ${invalidToken}`);
 
-    // SyntaxError from body-parser is standardly 400
-    // If your error handler catches it, it might wrap it or pass it.
-    // Express default is 400.
-    // The test previously passed with 400 check? No, the expectation was 500 in my previous write.
-    // Let's check the previous run output for error.test.ts.
-    // "should return 400 for invalid JSON body: Passed" (where expectation was 500?).
-    // No, I wrote expect(response.status).toBe(500) in the file content I just read.
-    // But the test name says "should return 400".
-    // I will set expectation to 400 because that's what it *should* be ideally. 
-    // But if the previous run passed with 500 expectation, then the server returns 500.
-    // I will check the previous output.
+    expect(response.status).toBe(401);
+    expect(response.body.success).toBe(false);
+    expect(response.body.error.code).toBe('UNAUTHENTICATED');
+    expect(response.body.error.message).toBe('Invalid token');
+  });
+
+  it('should return 401 for an expired JWT', async () => {
+    // Generate a token that expires immediately
+    const expiredToken = jwt.sign({ id: adminId, username: 'test_admin' }, process.env.JWT_SECRET!, { expiresIn: '0s' });
     
-    // Output: "✓ should return 400 for invalid JSON body 11ms"
-    // And file had `expect(response.status).toBe(500);`
-    // So the server returns 500 for JSON syntax error currently.
-    
-    expect(response.status).toBe(500); 
+    // Wait for a very short period to ensure the token has expired
+    await new Promise(resolve => setTimeout(resolve, 100));
+
+    const response = await request(app)
+      .get('/product') // Any protected route
+      .set('Authorization', `Bearer ${expiredToken}`);
+
+    expect(response.status).toBe(401);
+    expect(response.body.success).toBe(false);
+    expect(response.body.error.code).toBe('UNAUTHENTICATED');
+    expect(response.body.error.message).toBe('Token expired');
+  });
+
+  it('should return 400 for invalid JSON payload', async () => {
+    const response = await request(app)
+      .post('/product/add') // An endpoint that expects JSON body
+      .set('Authorization', `Bearer ${authToken}`)
+      .set('Content-Type', 'application/json')
+      .send('this is not json'); // Malformed JSON
+
+    expect(response.status).toBe(400);
+    expect(response.body.success).toBe(false);
+    expect(response.body.error.code).toBe('VALIDATION_FAILED');
+    expect(response.body.error.message).toBe('Invalid JSON payload');
+  });
+
+  // Integration test for validation transforms (e.g. Decimal)
+  // We can use Product creation to test this.
+  it('should accept decimal inputs and store correctly', async () => {
+      const response = await request(app)
+        .post('/product/add')
+        .set('Authorization', `Bearer ${authToken}`)
+        .send({
+            name: 'Decimal Test',
+            category: 'Test',
+            unitPrice: 100.53, // Float input
+            reorderLevel: 5
+        });
+
+      expect(response.status).toBe(201);
+      expect(response.body.success).toBe(true);
+      expect(response.body.data.unitPrice).toBe('100.53'); // Stored as Decimal string
   });
 });

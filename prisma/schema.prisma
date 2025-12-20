@@ -62,7 +62,7 @@ model PurchaseOrderItem {
   unitPrice       Decimal @db.Decimal(10, 2)
 
   product       Product       @relation(fields: [productId], references: [id])
-  purchaseOrder PurchaseOrder @relation(fields: [purchaseOrderId], references: [id])
+  purchaseOrder PurchaseOrder @relation(fields: [purchaseOrderId], references: [id], onDelete: Cascade)
 }
 
 model CustomerOrder {
@@ -83,5 +83,5 @@ model CustomerOrderItem {
   unitPrice       Decimal @db.Decimal(10, 2)
 
   product       Product       @relation(fields: [productId], references: [id])
-  customerOrder CustomerOrder @relation(fields: [customerOrderId], references: [id])
+  customerOrder CustomerOrder @relation(fields: [customerOrderId], references: [id], onDelete: Cascade)
 }

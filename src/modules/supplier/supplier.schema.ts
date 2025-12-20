@@ -31,9 +31,14 @@ export const DeleteSupplierSchema = inParams(BaseSupplierSchema.pick({
     id: true,
 }));
 
+export const GetSupplierByProductIdSchema = inParams(z.object({
+    productId: z.uuid()
+}));
+
 export type CreateSupplierInput = z.infer<typeof CreateSupplierSchema.shape.body>;
 export type GetSupplierByIdInput = z.infer<typeof GetSupplierByIdSchema.shape.params>;
 export type UpdateSupplierInput = z.infer<typeof UpdateSupplierSchema.shape.body>;
 export type UpdateSupplierParamsInput = z.infer<typeof UpdateSupplierParamsSchema.shape.params>;
 export type DeleteSupplierInput = z.infer<typeof DeleteSupplierSchema.shape.params>;
+export type GetSupplierByProductIdInput = z.infer<typeof GetSupplierByProductIdSchema.shape.params>;
 

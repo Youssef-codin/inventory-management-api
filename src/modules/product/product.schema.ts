@@ -9,7 +9,7 @@ const BaseProductSchema = z.object({
     category: z.string(),
     unitPrice: z.union([
         z.instanceof(Decimal),
-        z.number().transform(n => new Decimal(n)),
+        z.number().positive().transform(n => new Decimal(n)),
     ]),
     stockQuantity: z.number().int().default(0),
     reorderLevel: z.number().int()
@@ -40,9 +40,14 @@ export const DeleteProductSchema = inParams(BaseProductSchema.pick({
     id: true,
 }));
 
+export const UpdateStockSchema = inBody(z.object({
+    amount: z.number().int().min(0)
+}));
+
 export type CreateProductInput = z.infer<typeof CreateProductSchema.shape.body>
 export type GetProductByIdInput = z.infer<typeof GetProductByIdSchema.shape.params>
 export type GetProductByNameInput = z.infer<typeof GetProductByNameSchema.shape.query>
 export type UpdateProductInput = z.infer<typeof UpdateProductSchema.shape.body>
 export type UpdateProductParamsInput = z.infer<typeof UpdateProductParamsSchema.shape.params>
 export type DeleteProductInput = z.infer<typeof DeleteProductSchema.shape.params>
+export type UpdateStockInput = z.infer<typeof UpdateStockSchema.shape.body>

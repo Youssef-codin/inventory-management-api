@@ -1,9 +1,7 @@
 import { ok, respond } from "../../util/apiresponse";
 import { Request, Response } from "express";
 import { CreatePurchaseOrderInput, DeletePurchaseOrderInput, GetPurchaseOrderByIdInput, UpdatePurchaseOrderInput, UpdatePurchaseOrderParamsInput } from "./purchaseorder.schema";
-import { createPurchaseOrder, deletePurchaseOrder, getPurchaseOrderById, updatePurchaseOrder } from "./purchaseorder.service";
-import { AppError } from "../../errors/AppError";
-import { ERROR_CODE } from "../../middleware/errorHandler";
+import { createPurchaseOrder, deletePurchaseOrder, getPurchaseOrderById, orderArrived, updatePurchaseOrder } from "./purchaseorder.service";
 
 export async function getPurchaseOrderByIdHandler(req: Request<GetPurchaseOrderByIdInput>, res: Response) {
     const getId = req.params.id;
@@ -23,9 +21,6 @@ export async function createPurchaseOrderHandler(req: Request<{}, {}, CreatePurc
 
 export async function updatePurchaseOrderHandler(req: Request<UpdatePurchaseOrderParamsInput, {}, UpdatePurchaseOrderInput>, res: Response) {
     const reqAdminId = res.locals.id;
-    if (reqAdminId !== req.body.adminId)
-        throw new AppError(403, "Unauthorized: cannot create purchase order for another admin.", ERROR_CODE.UNAUTHORIZED)
-
     const purchaseOrderInput = req.body;
     const id = req.params.id;
 
@@ -33,7 +28,13 @@ export async function updatePurchaseOrderHandler(req: Request<UpdatePurchaseOrde
     return respond(res, 200, ok(updatedPurchaseOrder));
 }
 
+export async function orderArrivedHandler(req: Request<UpdatePurchaseOrderParamsInput>, res: Response) {
+    const updated = await orderArrived(req.params.id);
+    return respond(res, 200, ok(updated));
+}
+
 export async function deletePurchaseOrderHandler(req: Request<DeletePurchaseOrderInput>, res: Response) {
+
     await deletePurchaseOrder(req.params.id);
     return res.status(204).send();
 }

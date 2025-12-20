@@ -8,6 +8,8 @@ async function findById(id: GetCustomerOrderByIdInput['id']) {
     return await prisma.customerOrder.findUnique({
         where: {
             id
+        }, include: {
+            items: true
         }
     });
 }

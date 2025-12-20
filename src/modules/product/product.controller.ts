@@ -1,11 +1,23 @@
 import { ok, respond } from "../../util/apiresponse";
 import { Request, Response } from "express"
-import { CreateProductInput, DeleteProductInput, GetProductByIdInput as GetProductByIdInput, GetProductByNameInput, UpdateProductInput, UpdateProductParamsInput } from "./product.schema";
-import { createProduct, deleteProduct, getAllProducts, getProductById, getProductByName, updateProduct } from "./product.service";
+import { CreateProductInput, DeleteProductInput, GetProductByIdInput as GetProductByIdInput, GetProductByNameInput, UpdateProductInput, UpdateProductParamsInput, UpdateStockInput } from "./product.schema";
+import { createProduct, deleteProduct, getAllProducts, getLowStockProducts, getProductById, getProductByName, updateProduct, updateProductStock } from "./product.service";
 
 export async function getAllProductsHandler(req: Request, res: Response) {
     const products = await getAllProducts();
     return respond(res, 200, ok(products));
+}
+
+export async function getLowStockProductsHandler(req: Request, res: Response) {
+    const products = await getLowStockProducts();
+    return respond(res, 200, ok(products));
+}
+
+export async function updateProductStockHandler(req: Request<UpdateProductParamsInput, {}, UpdateStockInput>, res: Response) {
+    const id = req.params.id;
+    const amount = req.body.amount;
+    const updatedProduct = await updateProductStock(id, amount);
+    return respond(res, 200, ok(updatedProduct));
 }
 
 export async function getProductByNameHandler(req: Request<{}, {}, {}, GetProductByNameInput>, res: Response) {

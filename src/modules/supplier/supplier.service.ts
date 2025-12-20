@@ -1,12 +1,28 @@
 import { AppError } from "../../errors/AppError";
 import { ERROR_CODE } from "../../middleware/errorHandler";
 import { prisma } from "../../util/prisma";
-import { CreateSupplierInput, DeleteSupplierInput, GetSupplierByIdInput, UpdateSupplierInput, UpdateSupplierParamsInput } from "./supplier.schema";
+import { CreateSupplierInput, DeleteSupplierInput, GetSupplierByIdInput, GetSupplierByProductIdInput, UpdateSupplierInput, UpdateSupplierParamsInput } from "./supplier.schema";
 
 async function findSupplierById(id: GetSupplierByIdInput['id']) {
     return await prisma.supplier.findUnique({
         where: {
             id
+        }
+    });
+}
+
+export async function getSuppliersByProduct(productId: GetSupplierByProductIdInput['productId']) {
+    return await prisma.supplier.findMany({
+        where: {
+            purchaseOrders: {
+                some: {
+                    items: {
+                        some: {
+                            productId
+                        }
+                    }
+                }
+            }
         }
     });
 }

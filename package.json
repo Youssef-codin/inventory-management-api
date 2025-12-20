@@ -11,7 +11,9 @@
     "migrate": "npx prisma migrate dev --name",
     "gen": "npx prisma generate",
     "generate": "npx prisma generate",
+    "seed": "tsx --env-file .env src/scripts/seed.ts",
     "test": "vitest",
+    "test:coverage": "vitest --coverage",
     "lint": "eslint src --ext .ts",
     "lint:fix": "eslint src --ext .ts --fix"
   },
@@ -29,6 +31,7 @@
     "@types/supertest": "^6.0.3",
     "@typescript-eslint/eslint-plugin": "^8.50.0",
     "@typescript-eslint/parser": "^8.50.0",
+    "@vitest/coverage-v8": "^4.0.16",
     "eslint": "^9.39.2",
     "prisma": "^7.1.0",
     "supertest": "^7.1.4",
