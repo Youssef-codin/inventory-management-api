@@ -10,13 +10,13 @@ const BaseCustomerOrderItemSchema = z.object({
     quantity: z.number().int().positive("Quantity must be positive"),
     unitPrice: z.union([
         z.instanceof(Decimal),
-        z.number().transform(n => new Decimal(n)),
+        z.number().positive("Unit price must be positive").transform(n => new Decimal(n)),
     ]),
 }) satisfies z.ZodType<CustomerOrderItem>;
 
 const BaseCustomerOrderSchema = z.object({
     id: z.uuid(),
-    orderDate: z.date(),
+    orderDate: z.coerce.date(),
     totalAmount: z.union([
         z.instanceof(Decimal),
         z.number().transform(n => new Decimal(n)),
@@ -29,13 +29,16 @@ const BaseCustomerOrderSchema = z.object({
 const itemsInputSchema = BaseCustomerOrderSchema.shape.items.element.omit({
     id: true,
     customerOrderId: true,
+}).omit({
+    unitPrice: true
 });
 
 export const CreateCustomerOrderSchema = inBody(BaseCustomerOrderSchema.omit({
     id: true,
     items: true,
+    totalAmount: true,
 }).extend({
-    items: z.array(itemsInputSchema)
+    items: z.array(itemsInputSchema).min(1)
 }));
 
 export const GetCustomerOrderByIdSchema = inParams(BaseCustomerOrderSchema.pick({
@@ -46,6 +49,10 @@ export const UpdateCustomerOrderParamsSchema = GetCustomerOrderByIdSchema;
 
 export const UpdateCustomerOrderSchema = inBody(BaseCustomerOrderSchema.omit({
     id: true,
+    items: true,
+    totalAmount: true,
+}).extend({
+    items: z.array(itemsInputSchema)
 }));
 
 export const DeleteCustomerOrderSchema = inParams(BaseCustomerOrderSchema.pick({

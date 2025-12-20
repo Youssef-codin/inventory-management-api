@@ -27,7 +27,7 @@ app.use("/customer-order", customerOrderRouter);
 app.use("/purchase-order", purchaseOrderRouter);
 app.use("/supplier", supplierRouter);
 
-//-- catch all 404
+//-- catch all 404 
 app.use((req, res) => {
     return respond(res, 404, fail("Route not found", ERROR_CODE.NOT_FOUND));
 });

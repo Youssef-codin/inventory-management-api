@@ -2,9 +2,9 @@ import { AppError } from "../../errors/AppError";
 import { ERROR_CODE } from "../../middleware/errorHandler";
 import { hashPassword } from "../../util/auth";
 import { prisma } from "../../util/prisma";
-import { CreateAdminInput, UpdateAdminInput } from "./admin.schema";
+import { CreateAdminInput, DeleteAdminInput, GetAdminByIdInput, UpdateAdminInput, UpdateAdminParamsInput } from "./admin.schema";
 
-async function findById(id: string) {
+async function findById(id: GetAdminByIdInput['id']) {
     return await prisma.admin.findUnique({
         where: {
             id
@@ -12,7 +12,7 @@ async function findById(id: string) {
     });
 }
 
-export async function getAdminById(id: string) {
+export async function getAdminById(id: GetAdminByIdInput['id']) {
     const admin = await prisma.admin.findUnique({
         where: {
             id
@@ -69,7 +69,7 @@ export async function createAdmin(data: CreateAdminInput) {
     });
 }
 
-export async function updateAdmin(id: string, data: UpdateAdminInput) {
+export async function updateAdmin(id: UpdateAdminParamsInput['id'], data: UpdateAdminInput) {
     const exists = await findById(id);
 
     if (!exists)
@@ -88,7 +88,7 @@ export async function updateAdmin(id: string, data: UpdateAdminInput) {
 }
 
 
-export async function deleteAdmin(id: string) {
+export async function deleteAdmin(id: DeleteAdminInput['id']) {
     const exists = await findById(id);
 
     if (!exists)

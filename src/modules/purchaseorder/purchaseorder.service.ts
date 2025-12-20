@@ -1,9 +1,10 @@
+import { Decimal } from "@prisma/client/runtime/client";
 import { AppError } from "../../errors/AppError";
 import { ERROR_CODE } from "../../middleware/errorHandler";
 import { prisma } from "../../util/prisma";
-import { CreatePurchaseOrderInput, UpdatePurchaseOrderInput } from "./purchaseorder.schema";
+import { CreatePurchaseOrderInput, DeletePurchaseOrderInput, GetPurchaseOrderByIdInput, UpdatePurchaseOrderInput, UpdatePurchaseOrderParamsInput } from "./purchaseorder.schema";
 
-async function findById(id: string) {
+async function findById(id: GetPurchaseOrderByIdInput['id']) {
     return await prisma.purchaseOrder.findUnique({
         where: {
             id
@@ -13,7 +14,7 @@ async function findById(id: string) {
     });
 }
 
-export async function getPurchaseOrderById(id: string) {
+export async function getPurchaseOrderById(id: GetPurchaseOrderByIdInput['id']) {
     const order = await findById(id);
 
     if (!order)
@@ -26,7 +27,88 @@ export async function getAllPurchaseOrders() {
     return await prisma.purchaseOrder.findMany();
 }
 
-export async function createPurchaseOrder(data: CreatePurchaseOrderInput) {
+export async function createPurchaseOrder(requestingAdminId: string, data: CreatePurchaseOrderInput) {
+    if (requestingAdminId !== data.adminId)
+        throw new AppError(403, "Unauthorized: cannot create purchase order for another admin.", ERROR_CODE.UNAUTHORIZED)
+
+    const productIds = data.items.map(item => item.productId);
+    const products = await prisma.product.findMany({
+        where: {
+            id: {
+                in: productIds
+            }
+        },
+    });
+
+    if (products.length !== productIds.length) {
+        throw new AppError(404, "One or more products not found", ERROR_CODE.NOT_FOUND);
+    }
+
+    const itemQuantity = data.items.map((item) => ({
+        id: item.productId,
+        quantity: item.quantity
+    }));
+
+    const total = products.reduce((sum, prod) => {
+        const item = itemQuantity.find(i => i.id === prod.id);
+        return sum + (item!.quantity * prod.unitPrice.toNumber());
+    }, 0);
+
+    const order = await prisma.$transaction(async (tx) => {
+        const order = await tx.purchaseOrder.create({
+            data: {
+                adminId: data.adminId,
+                supplierId: data.supplierId,
+                orderDate: data.orderDate || new Date(),
+                arrived: data.arrived || false,
+                totalAmount: new Decimal(total),
+                items: {
+                    createMany: {
+                        data: data.items.map(item => ({
+                            productId: item.productId,
+                            quantity: item.quantity,
+                            unitPrice: item.unitPrice
+                        }))
+                    }
+                }
+            },
+            include: {
+                items: true
+            }
+        });
+
+        for (const item of itemQuantity) {
+            await tx.product.update({
+                where: {
+                    id: item.id
+                },
+                data: {
+                    stockQuantity: {
+                        increment: item.quantity
+                    }
+                }
+            });
+        }
+
+        return order;
+    });
+
+    return order
+}
+
+export async function updatePurchaseOrder(requestingAdminId: string, id: UpdatePurchaseOrderParamsInput['id'], data: UpdatePurchaseOrderInput) {
+    if (requestingAdminId !== data.adminId)
+        throw new AppError(403, "Unauthorized: cannot create purchase order for another admin.", ERROR_CODE.UNAUTHORIZED)
+
+    const purchaseOrder = await prisma.purchaseOrder.findUnique({
+        where: { id },
+        include: { items: true },
+    });
+
+    if (!purchaseOrder) {
+        throw new AppError(404, "Purchase order not found", ERROR_CODE.NOT_FOUND);
+    }
+
     const productIds = data.items.map(item => item.productId);
     const products = await prisma.product.findMany({
         where: {
@@ -44,22 +126,32 @@ export async function createPurchaseOrder(data: CreatePurchaseOrderInput) {
         return sum + (e.quantity * e.unitPrice.toNumber());
     }, 0);
 
-    return await prisma.purchaseOrder.create({
+    return await prisma.purchaseOrder.update({
+        where: { id },
         data: {
             adminId: data.adminId,
             supplierId: data.supplierId,
-
-
-        }
+            orderDate: data.orderDate,
+            arrived: data.arrived,
+            totalAmount: new Decimal(total),
+            items: {
+                deleteMany: {},
+                createMany: {
+                    data: data.items.map(item => ({
+                        productId: item.productId,
+                        quantity: item.quantity,
+                        unitPrice: item.unitPrice.toNumber(),
+                    })),
+                },
+            },
+        },
+        include: {
+            items: true,
+        },
     });
 }
 
-export async function updatePurchaseOrder(id: string, data: UpdatePurchaseOrderInput) {
-    throw new AppError(501, "Not implemented", ERROR_CODE.UNKNOWN_ERROR);
-
-}
-
-export async function deletePurchaseOrder(id: string) {
+export async function deletePurchaseOrder(id: DeletePurchaseOrderInput['id']) {
     const order = await findById(id);
 
     if (!order)

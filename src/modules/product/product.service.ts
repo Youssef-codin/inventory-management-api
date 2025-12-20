@@ -1,9 +1,9 @@
 import { AppError } from "../../errors/AppError";
 import { ERROR_CODE } from "../../middleware/errorHandler";
 import { prisma } from "../../util/prisma";
-import { CreateProductInput, UpdateProductInput } from "./product.schema";
+import { CreateProductInput, DeleteProductInput, GetProductByIdInput, UpdateProductInput, UpdateProductParamsInput } from "./product.schema";
 
-async function findProductById(id: string) {
+async function findProductById(id: GetProductByIdInput['id']) {
     return await prisma.product.findUnique({
         where: {
             id
@@ -11,7 +11,7 @@ async function findProductById(id: string) {
     });
 }
 
-export async function getProductById(id: string) {
+export async function getProductById(id: GetProductByIdInput['id']) {
     const product = await findProductById(id);
 
     if (!product)
@@ -41,7 +41,7 @@ export async function createProduct(data: CreateProductInput) {
     });
 }
 
-export async function updateProduct(id: string, data: UpdateProductInput) {
+export async function updateProduct(id: UpdateProductParamsInput['id'], data: UpdateProductInput) {
     const productToUpdate = await findProductById(id);
 
     if (!productToUpdate)
@@ -55,7 +55,7 @@ export async function updateProduct(id: string, data: UpdateProductInput) {
     });
 }
 
-export async function deleteProduct(id: string) {
+export async function deleteProduct(id: DeleteProductInput['id']) {
     const productToDelete = await findProductById(id);
 
     if (!productToDelete)

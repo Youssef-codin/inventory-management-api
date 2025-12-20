@@ -39,7 +39,7 @@ describe('Purchase Order Module', () => {
     supplierId = supplier.id;
   });
 
-  describe.skip('POST /purchase-order/add', () => {
+  describe('POST /purchase-order/add', () => {
     it('should create a new purchase order', async () => {
       const response = await request(app)
         .post('/purchase-order/add')
@@ -47,21 +47,26 @@ describe('Purchase Order Module', () => {
         .send({
           adminId: adminId,
           supplierId: supplierId,
+          orderDate: new Date().toISOString(),
+          totalAmount: 1000.00,
+          arrived: false,
           items: [
             {
               productId: productId,
-              quantity: 10
+              quantity: 10,
+              unitPrice: 100.00
             }
           ]
         });
 
-      expect(response.status).toBe(200);
+      // Expect 201 for creation
+      expect(response.status).toBe(201);
       expect(response.body.data).toHaveProperty('id');
       expect(response.body.data.items).toHaveLength(1);
     });
   });
 
-  describe.skip('GET /purchase-order/:id', () => {
+  describe('GET /purchase-order/:id', () => {
     it('should get a purchase order by id', async () => {
       // Manually create an order
       const order = await prisma.purchaseOrder.create({
@@ -73,7 +78,8 @@ describe('Purchase Order Module', () => {
             create: [
               {
                 productId: productId,
-                quantity: 10
+                quantity: 10,
+                unitPrice: 100.00
               }
             ]
           }
@@ -90,7 +96,7 @@ describe('Purchase Order Module', () => {
     });
   });
 
-  describe.skip('DELETE /purchase-order/:id', () => {
+  describe('DELETE /purchase-order/:id', () => {
     it('should delete a purchase order', async () => {
       const order = await prisma.purchaseOrder.create({
         data: {
@@ -101,7 +107,8 @@ describe('Purchase Order Module', () => {
             create: [
               {
                 productId: productId,
-                quantity: 5
+                quantity: 5,
+                unitPrice: 100.00
               }
             ]
           }
@@ -112,7 +119,7 @@ describe('Purchase Order Module', () => {
         .delete(`/purchase-order/${order.id}`)
         .set('Authorization', `Bearer ${authToken}`);
 
-      expect(response.status).toBe(200);
+      expect(response.status).toBe(204);
 
       const check = await prisma.purchaseOrder.findUnique({ where: { id: order.id } });
       expect(check).toBeNull();

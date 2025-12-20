@@ -5,7 +5,7 @@ import { inBody, inParams } from "../../util/schema.helper";
 const BaseSupplierSchema = z.object({
     name: z.string().nullable(),
     id: z.uuid(),
-    contactEmail: z.string().email(),
+    contactEmail: z.email(),
     phone: z.string(),
     address: z.string()
 

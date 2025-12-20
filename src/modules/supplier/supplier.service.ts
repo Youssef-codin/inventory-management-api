@@ -1,9 +1,9 @@
 import { AppError } from "../../errors/AppError";
 import { ERROR_CODE } from "../../middleware/errorHandler";
 import { prisma } from "../../util/prisma";
-import { CreateSupplierInput, UpdateSupplierInput } from "./supplier.schema";
+import { CreateSupplierInput, DeleteSupplierInput, GetSupplierByIdInput, UpdateSupplierInput, UpdateSupplierParamsInput } from "./supplier.schema";
 
-async function findSupplierById(id: string) {
+async function findSupplierById(id: GetSupplierByIdInput['id']) {
     return await prisma.supplier.findUnique({
         where: {
             id
@@ -11,7 +11,7 @@ async function findSupplierById(id: string) {
     });
 }
 
-export async function getSupplierById(id: string) {
+export async function getSupplierById(id: GetSupplierByIdInput['id']) {
     const supplier = await findSupplierById(id);
 
     if (!supplier)
@@ -30,7 +30,7 @@ export async function createSupplier(data: CreateSupplierInput) {
     });
 }
 
-export async function updateSupplier(id: string, data: UpdateSupplierInput) {
+export async function updateSupplier(id: UpdateSupplierParamsInput['id'], data: UpdateSupplierInput) {
     const exists = await findSupplierById(id);
 
     if (!exists)
@@ -44,7 +44,7 @@ export async function updateSupplier(id: string, data: UpdateSupplierInput) {
     });
 }
 
-export async function deleteSupplier(id: string) {
+export async function deleteSupplier(id: DeleteSupplierInput['id']) {
     const exists = await findSupplierById(id);
 
     if (!exists)
