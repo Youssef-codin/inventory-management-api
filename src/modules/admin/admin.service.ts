@@ -17,7 +17,7 @@ export async function getAdminById(id: string) {
         where: {
             id
         }, omit: {
-            id: true
+            passwordHash: true,
         }
     });
 
@@ -34,6 +34,16 @@ export async function getAdminByName(username: string) {
                 contains: username,
                 mode: "insensitive"
             }
+        }, omit: {
+            passwordHash: true
+        }
+    });
+}
+
+export async function getAllAdmins() {
+    return await prisma.admin.findMany({
+        omit: {
+            passwordHash: true
         }
     });
 }

@@ -8,24 +8,24 @@ const connectionString = `${process.env.DATABASE_URL}`
 
 const adapter = new PrismaPg({ connectionString })
 const prisma = new PrismaClient({
-    log: [
-        {
-            emit: 'event',
-            level: 'query',
-        },
-        {
-            emit: 'event',
-            level: 'error',
-        },
-        {
-            emit: 'event',
-            level: 'info',
-        },
-        {
-            emit: 'event',
-            level: 'warn',
-        },
-    ],
+    // log: [
+    //     {
+    //         emit: 'event',
+    //         level: 'query',
+    //     },
+    //     {
+    //         emit: 'event',
+    //         level: 'error',
+    //     },
+    //     {
+    //         emit: 'event',
+    //         level: 'info',
+    //     },
+    //     {
+    //         emit: 'event',
+    //         level: 'warn',
+    //     },
+    // ],
     adapter
 })
 
@@ -62,20 +62,21 @@ export function logPrismaQuery(event: QueryEvent) {
 }
 
 
-prisma.$on('query', (e) => {
-    logPrismaQuery(e);
-})
-
-prisma.$on('error', (e) => {
-    logger.info(e);
-})
-
-prisma.$on('info', (e) => {
-    logger.info(e);
-})
-
-prisma.$on('warn', (e) => {
-    logger.info(e);
-})
+//FIXME: Remember to re-add logging for queries
+// prisma.$on('query', (e) => {
+//     logPrismaQuery(e);
+// })
+//
+// prisma.$on('error', (e) => {
+//     logger.info(e);
+// })
+//
+// prisma.$on('info', (e) => {
+//     logger.info(e);
+// })
+//
+// prisma.$on('warn', (e) => {
+//     logger.info(e);
+// })
 
 export { prisma }

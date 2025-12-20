@@ -7,15 +7,12 @@ async function findProductById(id: string) {
     return await prisma.product.findUnique({
         where: {
             id
-        },
-        omit: {
-            id: true
         }
     });
 }
 
 export async function getProductById(id: string) {
-    const product = findProductById(id);
+    const product = await findProductById(id);
 
     if (!product)
         throw new AppError(404, "Product with such ID not found", ERROR_CODE.NOT_FOUND);
@@ -45,7 +42,10 @@ export async function createProduct(data: CreateProductInput) {
 }
 
 export async function updateProduct(id: string, data: UpdateProductInput) {
-    const productToUpdate = findProductById(id);
+    const productToUpdate = await findProductById(id);
+
+    if (!productToUpdate)
+        throw new AppError(404, "Product with such ID not found", ERROR_CODE.NOT_FOUND);
 
     return await prisma.product.update({
         where: {
@@ -56,7 +56,7 @@ export async function updateProduct(id: string, data: UpdateProductInput) {
 }
 
 export async function deleteProduct(id: string) {
-    const productToDelete = findProductById(id);
+    const productToDelete = await findProductById(id);
 
     if (!productToDelete)
         throw new AppError(404, "Product with such ID not found", ERROR_CODE.NOT_FOUND);
@@ -69,4 +69,3 @@ export async function deleteProduct(id: string) {
 
     return true;
 }
-

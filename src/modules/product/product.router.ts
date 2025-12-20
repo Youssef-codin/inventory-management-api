@@ -1,10 +1,11 @@
 import { Router } from "express";
 import { validate } from "../../middleware/validate";
 import { CreateProductSchema, DeleteProductSchema, GetProductByIdSchema, GetProductByNameSchema, UpdateProductParamsSchema, UpdateProductSchema } from "./product.schema";
-import { createProductHandler, deleteProductHandler, getProductByIdHandler, getProductByNameHandler, updateProductHandler } from "./product.controller";
+import { createProductHandler, deleteProductHandler, getAllProductsHandler, getProductByIdHandler, getProductByNameHandler, updateProductHandler } from "./product.controller";
 
 const productRouter = Router();
 
+productRouter.get("/", getAllProductsHandler);
 productRouter.post("/add", validate(CreateProductSchema), createProductHandler);
 productRouter.get("/search", validate(GetProductByNameSchema), getProductByNameHandler);
 productRouter.get("/:id", validate(GetProductByIdSchema), getProductByIdHandler);

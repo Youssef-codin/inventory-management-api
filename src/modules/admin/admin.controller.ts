@@ -1,7 +1,12 @@
 import { ok, respond } from "../../util/apiresponse";
 import { Request, Response } from "express";
 import { CreateAdminInput, DeleteAdminInput, GetAdminByIdInput, GetAdminByNameInput, UpdateAdminInput, UpdateAdminParamsInput } from "./admin.schema";
-import { createAdmin, deleteAdmin, getAdminById, getAdminByName, updateAdmin } from "./admin.service";
+import { createAdmin, deleteAdmin, getAdminById, getAdminByName, getAllAdmins, updateAdmin } from "./admin.service";
+
+export async function getAllAdminsHandler(req: Request, res: Response) {
+    const admins = await getAllAdmins();
+    return respond(res, 200, ok(admins));
+}
 
 export async function getAdminByNameHandler(req: Request<{}, {}, {}, GetAdminByNameInput>, res: Response) {
     const getName = req.query.username;

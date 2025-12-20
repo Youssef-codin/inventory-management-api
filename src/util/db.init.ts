@@ -9,6 +9,6 @@ export async function initDb() {
             password: "admin"
         };
 
-        createAdmin(adminData);
+        await createAdmin(adminData);
     }
 }

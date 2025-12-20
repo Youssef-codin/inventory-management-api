@@ -10,7 +10,10 @@
     "studio": "npx prisma studio --config ./prisma.config.ts",
     "migrate": "npx prisma migrate dev --name",
     "gen": "npx prisma generate",
-    "generate": "npx prisma generate"
+    "generate": "npx prisma generate",
+    "test": "vitest",
+    "lint": "eslint src --ext .ts",
+    "lint:fix": "eslint src --ext .ts --fix"
   },
   "keywords": [],
   "author": "",
@@ -23,9 +26,15 @@
     "@types/jsonwebtoken": "^9.0.10",
     "@types/node": "^24.10.1",
     "@types/pg": "^8.15.6",
+    "@types/supertest": "^6.0.3",
+    "@typescript-eslint/eslint-plugin": "^8.50.0",
+    "@typescript-eslint/parser": "^8.50.0",
+    "eslint": "^9.39.2",
     "prisma": "^7.1.0",
+    "supertest": "^7.1.4",
     "tsx": "^4.21.0",
-    "typescript": "^5.9.3"
+    "typescript": "^5.9.3",
+    "vitest": "^4.0.16"
   },
   "dependencies": {
     "@prisma/adapter-pg": "^7.1.0",

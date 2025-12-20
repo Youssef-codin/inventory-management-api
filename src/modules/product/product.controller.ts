@@ -1,7 +1,12 @@
 import { ok, respond } from "../../util/apiresponse";
 import { Request, Response } from "express"
 import { CreateProductInput, DeleteProductInput, GetProductByIdInput as GetProductByIdInput, GetProductByNameInput, UpdateProductInput, UpdateProductParamsInput } from "./product.schema";
-import { createProduct, deleteProduct, getProductById, getProductByName, updateProduct } from "./product.service";
+import { createProduct, deleteProduct, getAllProducts, getProductById, getProductByName, updateProduct } from "./product.service";
+
+export async function getAllProductsHandler(req: Request, res: Response) {
+    const products = await getAllProducts();
+    return respond(res, 200, ok(products));
+}
 
 export async function getProductByNameHandler(req: Request<{}, {}, {}, GetProductByNameInput>, res: Response) {
     const getName = req.query.name;
