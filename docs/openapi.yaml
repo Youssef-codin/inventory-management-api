@@ -7,6 +7,9 @@ servers:
   - url: http://localhost:3000
     description: Local development server
 
+security:
+  - bearerAuth: []
+
 paths:
   # --------------------
   # Auth Routes
@@ -15,6 +18,7 @@ paths:
     post:
       summary: Login and retrieve JWT token
       tags: [Auth]
+      security: []
       requestBody:
         required: true
         content:
@@ -38,6 +42,20 @@ paths:
   # --------------------
   # Product Routes
   # --------------------
+  /product:
+    get:
+      summary: Get all products
+      tags: [Product]
+      responses:
+        '200':
+          description: List of all products
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Product'
+
   /product/add:
     post:
       summary: Create a new product
@@ -143,6 +161,20 @@ paths:
   # --------------------
   # Admin Routes
   # --------------------
+  /admin:
+    get:
+      summary: Get all admins
+      tags: [Admin]
+      responses:
+        '200':
+          description: List of all admins
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Admin'
+
   /admin/add:
     post:
       summary: Create a new admin
@@ -397,6 +429,20 @@ paths:
   # --------------------
   # Supplier Routes
   # --------------------
+  /supplier:
+    get:
+      summary: Get all suppliers
+      tags: [Supplier]
+      responses:
+        '200':
+          description: List of all suppliers
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Supplier'
+
   /supplier/add:
     post:
       summary: Create supplier
@@ -474,6 +520,12 @@ paths:
 
 
 components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
   schemas:
     # --------------------
     # Auth Schemas
@@ -579,6 +631,20 @@ components:
     # --------------------
     # Customer Order Schemas
     # --------------------
+    CustomerOrderItem:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        productId:
+          type: string
+          format: uuid
+        quantity:
+          type: integer
+        unitPrice:
+          type: number
+
     CustomerOrder:
       type: object
       properties:
@@ -593,22 +659,40 @@ components:
         adminId:
           type: string
           format: uuid
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/CustomerOrderItem'
+
+    CreateCustomerOrderItemInput:
+      type: object
+      required:
+        - productId
+        - quantity
+      properties:
+        productId:
+          type: string
+          format: uuid
+        quantity:
+          type: integer
 
     CreateCustomerOrderInput:
       type: object
       required:
         - orderDate
-        - totalAmount
         - adminId
+        - items
       properties:
         orderDate:
           type: string
           format: date-time
-        totalAmount:
-          type: number
         adminId:
           type: string
           format: uuid
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/CreateCustomerOrderItemInput'
 
     UpdateCustomerOrderInput:
       type: object
@@ -616,15 +700,31 @@ components:
         orderDate:
           type: string
           format: date-time
-        totalAmount:
-          type: number
         adminId:
           type: string
           format: uuid
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/CreateCustomerOrderItemInput'
 
     # --------------------
     # Purchase Order Schemas
     # --------------------
+    PurchaseOrderItem:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        productId:
+          type: string
+          format: uuid
+        quantity:
+          type: integer
+        unitPrice:
+          type: number
+
     PurchaseOrder:
       type: object
       properties:
@@ -644,21 +744,38 @@ components:
         supplierId:
           type: string
           format: uuid
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/PurchaseOrderItem'
+
+    CreatePurchaseOrderItemInput:
+      type: object
+      required:
+        - productId
+        - quantity
+        - unitPrice
+      properties:
+        productId:
+          type: string
+          format: uuid
+        quantity:
+          type: integer
+        unitPrice:
+          type: number
 
     CreatePurchaseOrderInput:
       type: object
       required:
         - orderDate
-        - totalAmount
         - arrived
         - adminId
         - supplierId
+        - items
       properties:
         orderDate:
           type: string
           format: date-time
-        totalAmount:
-          type: number
         arrived:
           type: boolean
         adminId:
@@ -667,6 +784,10 @@ components:
         supplierId:
           type: string
           format: uuid
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/CreatePurchaseOrderItemInput'
 
     UpdatePurchaseOrderInput:
       type: object
@@ -674,8 +795,6 @@ components:
         orderDate:
           type: string
           format: date-time
-        totalAmount:
-          type: number
         arrived:
           type: boolean
         adminId:
@@ -684,6 +803,10 @@ components:
         supplierId:
           type: string
           format: uuid
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/CreatePurchaseOrderItemInput'
 
     # --------------------
     # Supplier Schemas
