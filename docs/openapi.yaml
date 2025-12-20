@@ -33,11 +33,18 @@ paths:
               schema:
                 type: object
                 properties:
+                  success:
+                    type: boolean
+                    example: true
                   data:
                     type: string
                     description: JWT Token
         '401':
           description: Invalid credentials
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
 
   # --------------------
   # Product Routes
@@ -52,9 +59,15 @@ paths:
           content:
             application/json:
               schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/Product'
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Product'
 
   /product/add:
     post:
@@ -72,9 +85,19 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Product'
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    $ref: '#/components/schemas/Product'
         '400':
           description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
 
   /product/search:
     get:
@@ -93,9 +116,15 @@ paths:
           content:
             application/json:
               schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/Product'
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Product'
 
   /product/{id}:
     get:
@@ -114,9 +143,19 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Product'
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    $ref: '#/components/schemas/Product'
         '404':
           description: Product not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
 
     put:
       summary: Update a product
@@ -140,9 +179,19 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Product'
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    $ref: '#/components/schemas/Product'
         '404':
           description: Product not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
 
     delete:
       summary: Delete a product
@@ -171,9 +220,15 @@ paths:
           content:
             application/json:
               schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/Admin'
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Admin'
 
   /admin/add:
     post:
@@ -191,7 +246,13 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Admin'
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    $ref: '#/components/schemas/Admin'
 
   /admin/search:
     get:
@@ -209,9 +270,15 @@ paths:
           content:
             application/json:
               schema:
-                type: array 
-                items: 
-                  $ref: '#/components/schemas/Admin' 
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: array 
+                    items: 
+                      $ref: '#/components/schemas/Admin' 
 
   /admin/{id}:
     get:
@@ -230,7 +297,13 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Admin'
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    $ref: '#/components/schemas/Admin'
 
     put:
       summary: Update admin
@@ -254,7 +327,13 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Admin'
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    $ref: '#/components/schemas/Admin'
 
     delete:
       summary: Delete admin
@@ -289,7 +368,24 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/CustomerOrder'
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: object
+                    properties:
+                      order: 
+                        $ref: '#/components/schemas/CustomerOrder'
+                      lowStockProductIds:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            id:
+                              type: string
+                              format: uuid
 
   /customer-order/{id}:
     get:
@@ -308,7 +404,13 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/CustomerOrder'
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    $ref: '#/components/schemas/CustomerOrder'
 
     put:
       summary: Update customer order
@@ -332,7 +434,13 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/CustomerOrder'
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    $ref: '#/components/schemas/CustomerOrder'
 
     delete:
       summary: Delete customer order
@@ -367,7 +475,13 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/PurchaseOrder'
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    $ref: '#/components/schemas/PurchaseOrder'
 
   /purchase-order/{id}:
     get:
@@ -386,7 +500,13 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/PurchaseOrder'
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    $ref: '#/components/schemas/PurchaseOrder'
 
     put:
       summary: Update purchase order
@@ -410,7 +530,13 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/PurchaseOrder'
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    $ref: '#/components/schemas/PurchaseOrder'
 
     delete:
       summary: Delete purchase order
@@ -439,9 +565,15 @@ paths:
           content:
             application/json:
               schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/Supplier'
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Supplier'
 
   /supplier/add:
     post:
@@ -459,7 +591,13 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Supplier'
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    $ref: '#/components/schemas/Supplier'
 
   /supplier/{id}:
     get:
@@ -478,7 +616,13 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Supplier'
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    $ref: '#/components/schemas/Supplier'
 
     put:
       summary: Update supplier
@@ -502,7 +646,13 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Supplier'
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    $ref: '#/components/schemas/Supplier'
 
     delete:
       summary: Delete supplier
@@ -527,6 +677,23 @@ components:
       bearerFormat: JWT
 
   schemas:
+    # --------------------
+    # Error Schema
+    # --------------------
+    ErrorResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: false
+        error:
+          type: object
+          properties:
+            message:
+              type: string
+            code:
+              type: string
+
     # --------------------
     # Auth Schemas
     # --------------------
