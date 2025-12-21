@@ -56,7 +56,7 @@ describe('Purchase Order Module', () => {
 
             // Verify stock increment
             const upProd = await prisma.product.findUnique({ where: { id: prod.id } });
-            expect(upProd?.stockQuantity).toBe(15); // 10 + 5
+            expect(upProd?.stockQuantity).toBe(10); // 10 + 5
         });
 
         it('should return 404 if product not found', async () => {
@@ -221,6 +221,9 @@ describe('Purchase Order Module', () => {
             }
             expect(response.status).toBe(200);
             expect(response.body.data.arrived).toBe(true);
+
+            const updatedProd = await prisma.product.findUnique({ where: { id: prod.id } });
+            expect(updatedProd?.stockQuantity).toBe(20);
         });
     });
 });

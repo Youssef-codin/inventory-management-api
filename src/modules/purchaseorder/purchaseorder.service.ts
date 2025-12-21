@@ -63,46 +63,29 @@ export async function createPurchaseOrder(requestingAdminId: string, data: Creat
         return sum + (item!.quantity * prod.unitPrice.toNumber());
     }, 0);
 
-    const order = await prisma.$transaction(async (tx) => {
-        const order = await tx.purchaseOrder.create({
-            data: {
-                adminId: data.adminId,
-                supplierId: data.supplierId,
-                orderDate: data.orderDate || new Date(),
-                arrived: data.arrived || false,
-                totalAmount: new Decimal(total),
-                items: {
-                    createMany: {
-                        data: data.items.map(item => ({
-                            productId: item.productId,
-                            quantity: item.quantity,
-                            unitPrice: Number(item.unitPrice)
-                        }))
-                    }
+    const order = await prisma.purchaseOrder.create({
+        data: {
+            adminId: data.adminId,
+            supplierId: data.supplierId,
+            orderDate: data.orderDate || new Date(),
+            arrived: data.arrived || false,
+            totalAmount: new Decimal(total),
+            items: {
+                createMany: {
+                    data: data.items.map(item => ({
+                        productId: item.productId,
+                        quantity: item.quantity,
+                        unitPrice: Number(item.unitPrice)
+                    }))
                 }
-            },
-            include: {
-                items: true
             }
-        });
-
-        for (const item of itemQuantity) {
-            await tx.product.update({
-                where: {
-                    id: item.id
-                },
-                data: {
-                    stockQuantity: {
-                        increment: item.quantity
-                    }
-                }
-            });
+        },
+        include: {
+            items: true
         }
-
-        return order;
     });
 
-    return order
+    return order;
 }
 
 export async function updatePurchaseOrder(requestingAdminId: string, id: UpdatePurchaseOrderParamsInput['id'], data: UpdatePurchaseOrderInput) {

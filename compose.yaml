@@ -5,8 +5,9 @@ services:
       dockerfile: Dockerfile
     environment:
       NODE_ENV: development
-      DATABASE_URL: postgresql://joe-arch:password@postgres:5432/inventoryManagement?schema=public
+      DATABASE_URL: postgresql://joe-arch:password@db:5432/inventoryManagement?schema=public
       JWT_SECRET: ${JWT_SECRET}
+      PORT: 3000
     command: npx tsx --watch src/server.ts
     ports:
       - "3000:3000"

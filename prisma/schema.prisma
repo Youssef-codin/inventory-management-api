@@ -51,7 +51,7 @@ model PurchaseOrder {
 
   items    PurchaseOrderItem[]
   admin    Admin               @relation(fields: [adminId], references: [id])
-  supplier Supplier            @relation(fields: [supplierId], references: [id])
+  supplier Supplier            @relation(fields: [supplierId], references: [id], onDelete: Cascade)
 }
 
 model PurchaseOrderItem {
