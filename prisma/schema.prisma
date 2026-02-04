@@ -28,6 +28,8 @@ model Supplier {
   phone          String
   address        String
   purchaseOrders PurchaseOrder[]
+
+  @@index([name])
 }
 
 model Product {
@@ -39,6 +41,9 @@ model Product {
   reorderLevel       Int                 @default(0)
   purchaseOrderItems PurchaseOrderItem[]
   customerOrderItems CustomerOrderItem[]
+  inventories        Inventory[]
+
+  @@index([name])
 }
 
 model PurchaseOrder {
@@ -48,8 +53,10 @@ model PurchaseOrder {
   arrived     Boolean  @default(false)
   adminId     String   @db.Uuid()
   supplierId  String   @db.Uuid()
+  shopId      Int
 
   items    PurchaseOrderItem[]
+  shop     Shop                @relation(fields: [shopId], references: [id])
   admin    Admin               @relation(fields: [adminId], references: [id])
   supplier Supplier            @relation(fields: [supplierId], references: [id], onDelete: Cascade)
 }
@@ -70,8 +77,10 @@ model CustomerOrder {
   orderDate   DateTime            @default(now())
   totalAmount Decimal             @db.Decimal(10, 2)
   adminId     String              @db.Uuid()
+  shopId      Int
   items       CustomerOrderItem[]
 
+  shop  Shop  @relation(fields: [shopId], references: [id])
   admin Admin @relation(fields: [adminId], references: [id])
 }
 
@@ -84,4 +93,27 @@ model CustomerOrderItem {
 
   product       Product       @relation(fields: [productId], references: [id])
   customerOrder CustomerOrder @relation(fields: [customerOrderId], references: [id], onDelete: Cascade)
+}
+
+model Shop {
+  id          Int         @id @default(autoincrement())
+  name        String
+  address     String?
+  inventories Inventory[]
+
+  customerOrders CustomerOrder[]
+  purchaseOrders PurchaseOrder[]
+}
+
+model Inventory {
+  productId String @db.Uuid()
+  shopId    Int
+  quantity  Int    @default(0)
+
+  product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+  shop    Shop    @relation(fields: [shopId], references: [id], onDelete: Cascade)
+
+  @@id([productId, shopId])
+  @@index([shopId])
+  @@index([productId])
 }
