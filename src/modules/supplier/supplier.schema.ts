@@ -1,6 +1,5 @@
 import z from "zod";
 import { Supplier } from "../../../generated/prisma/client";
-import { inBody, inParams } from "../../util/schema.helper";
 
 const BaseSupplierSchema = z.object({
     name: z.string().nullable(),
@@ -11,34 +10,24 @@ const BaseSupplierSchema = z.object({
 
 }) satisfies z.ZodType<Supplier>;
 
-export const CreateSupplierSchema = inBody(BaseSupplierSchema.omit({
+export const CreateSupplierSchema = BaseSupplierSchema.omit({
     id: true,
-}));
+});
 
-export const GetSupplierByIdSchema = inParams(BaseSupplierSchema.pick({
+export const SupplierIdSchema = BaseSupplierSchema.pick({
     id: true,
-}));
+});
 
-export const UpdateSupplierSchema = inBody(BaseSupplierSchema.omit({
+export const UpdateSupplierSchema = BaseSupplierSchema.omit({
     id: true,
-}));
+});
 
-export const UpdateSupplierParamsSchema = inParams(BaseSupplierSchema.pick({
-    id: true,
-}));
-
-export const DeleteSupplierSchema = inParams(BaseSupplierSchema.pick({
-    id: true,
-}));
-
-export const GetSupplierByProductIdSchema = inParams(z.object({
+export const GetSupplierByProductIdSchema = z.object({
     productId: z.uuid()
-}));
+});
 
-export type CreateSupplierInput = z.infer<typeof CreateSupplierSchema.shape.body>;
-export type GetSupplierByIdInput = z.infer<typeof GetSupplierByIdSchema.shape.params>;
-export type UpdateSupplierInput = z.infer<typeof UpdateSupplierSchema.shape.body>;
-export type UpdateSupplierParamsInput = z.infer<typeof UpdateSupplierParamsSchema.shape.params>;
-export type DeleteSupplierInput = z.infer<typeof DeleteSupplierSchema.shape.params>;
-export type GetSupplierByProductIdInput = z.infer<typeof GetSupplierByProductIdSchema.shape.params>;
+export type CreateSupplierInput = z.infer<typeof CreateSupplierSchema>;
+export type SupplierIdInput = z.infer<typeof SupplierIdSchema>;
+export type UpdateSupplierInput = z.infer<typeof UpdateSupplierSchema>;
+export type GetSupplierByProductIdInput = z.infer<typeof GetSupplierByProductIdSchema>;
 

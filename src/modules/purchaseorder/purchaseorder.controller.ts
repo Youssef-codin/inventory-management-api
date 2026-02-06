@@ -1,9 +1,9 @@
 import { ok, respond } from "../../util/apiresponse";
 import { Request, Response } from "express";
-import { CreatePurchaseOrderInput, DeletePurchaseOrderInput, GetPurchaseOrderByIdInput, UpdatePurchaseOrderInput, UpdatePurchaseOrderParamsInput } from "./purchaseorder.schema";
+import { CreatePurchaseOrderInput, PurchaseOrderIdInput, UpdatePurchaseOrderInput } from "./purchaseorder.schema";
 import { createPurchaseOrder, deletePurchaseOrder, getPurchaseOrderById, orderArrived, updatePurchaseOrder } from "./purchaseorder.service";
 
-export async function getPurchaseOrderByIdHandler(req: Request<GetPurchaseOrderByIdInput>, res: Response) {
+export async function getPurchaseOrderByIdHandler(req: Request<PurchaseOrderIdInput>, res: Response) {
     const getId = req.params.id;
 
     const purchaseOrder = await getPurchaseOrderById(getId);
@@ -19,7 +19,7 @@ export async function createPurchaseOrderHandler(req: Request<{}, {}, CreatePurc
     return respond(res, 201, ok(newPurchaseOrder));
 }
 
-export async function updatePurchaseOrderHandler(req: Request<UpdatePurchaseOrderParamsInput, {}, UpdatePurchaseOrderInput>, res: Response) {
+export async function updatePurchaseOrderHandler(req: Request<PurchaseOrderIdInput, {}, UpdatePurchaseOrderInput>, res: Response) {
     const reqAdminId = res.locals.id;
     const purchaseOrderInput = req.body;
     const id = req.params.id;
@@ -28,12 +28,12 @@ export async function updatePurchaseOrderHandler(req: Request<UpdatePurchaseOrde
     return respond(res, 200, ok(updatedPurchaseOrder));
 }
 
-export async function orderArrivedHandler(req: Request<UpdatePurchaseOrderParamsInput>, res: Response) {
+export async function orderArrivedHandler(req: Request<PurchaseOrderIdInput>, res: Response) {
     const updated = await orderArrived(req.params.id);
     return respond(res, 200, ok(updated));
 }
 
-export async function deletePurchaseOrderHandler(req: Request<DeletePurchaseOrderInput>, res: Response) {
+export async function deletePurchaseOrderHandler(req: Request<PurchaseOrderIdInput>, res: Response) {
 
     await deletePurchaseOrder(req.params.id);
     return res.status(204).send();

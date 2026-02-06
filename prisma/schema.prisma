@@ -37,7 +37,6 @@ model Product {
   name               String
   category           String
   unitPrice          Decimal             @db.Decimal(10, 2)
-  stockQuantity      Int                 @default(0)
   reorderLevel       Int                 @default(0)
   purchaseOrderItems PurchaseOrderItem[]
   customerOrderItems CustomerOrderItem[]

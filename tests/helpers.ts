@@ -12,8 +12,10 @@ export async function resetDb() {
     prisma.customerOrderItem.deleteMany(),
     prisma.purchaseOrder.deleteMany(),
     prisma.customerOrder.deleteMany(),
+    prisma.inventory.deleteMany(),
     prisma.product.deleteMany(),
     prisma.supplier.deleteMany(),
+    prisma.shop.deleteMany(),
     prisma.admin.deleteMany(),
   ]);
 }

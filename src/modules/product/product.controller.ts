@@ -1,33 +1,54 @@
-import { ok, respond } from "../../util/apiresponse";
-import { Request, Response } from "express"
-import { CreateProductInput, DeleteProductInput, GetProductByIdInput as GetProductByIdInput, GetProductByNameInput, UpdateProductInput, UpdateProductParamsInput, UpdateStockInput } from "./product.schema";
-import { createProduct, deleteProduct, getAllProducts, getLowStockProducts, getProductById, getProductByName, updateProduct, updateProductStock } from "./product.service";
+import { ok, respond } from '../../util/apiresponse';
+import { Request, Response } from 'express';
+import {
+    CreateProductInput,
+    GetProductByNameInput,
+    UpdateProductInput,
+    PatchStockInput,
+    ProductIdInput,
+} from './product.schema';
+import {
+    createProduct,
+    deleteProduct,
+    getAllProducts,
+    getLowStockProducts,
+    getProductById,
+    getProductByName,
+    updateProduct,
+    patchProductStock,
+} from './product.service';
 
-export async function getAllProductsHandler(req: Request, res: Response) {
+export async function getAllProductsHandler(_req: Request, res: Response) {
     const products = await getAllProducts();
     return respond(res, 200, ok(products));
 }
 
-export async function getLowStockProductsHandler(req: Request, res: Response) {
+export async function getLowStockProductsHandler(_req: Request, res: Response) {
     const products = await getLowStockProducts();
     return respond(res, 200, ok(products));
 }
 
-export async function updateProductStockHandler(req: Request<UpdateProductParamsInput, {}, UpdateStockInput>, res: Response) {
+export async function patchProductStockHandler(
+    req: Request<ProductIdInput, {}, PatchStockInput>,
+    res: Response,
+) {
     const id = req.params.id;
     const amount = req.body.amount;
-    const updatedProduct = await updateProductStock(id, amount);
+    const updatedProduct = await patchProductStock(id, amount);
     return respond(res, 200, ok(updatedProduct));
 }
 
-export async function getProductByNameHandler(req: Request<{}, {}, {}, GetProductByNameInput>, res: Response) {
+export async function getProductByNameHandler(
+    req: Request<{}, {}, {}, GetProductByNameInput>,
+    res: Response,
+) {
     const getName = req.query.name;
 
     const product = await getProductByName(getName);
     return respond(res, 200, ok(product));
 }
 
-export async function getProductByIdHandler(req: Request<GetProductByIdInput>, res: Response) {
+export async function getProductByIdHandler(req: Request<ProductIdInput>, res: Response) {
     const getId = req.params.id;
 
     const product = await getProductById(getId);
@@ -41,7 +62,10 @@ export async function createProductHandler(req: Request<{}, {}, CreateProductInp
     return respond(res, 201, ok(newProduct));
 }
 
-export async function updateProductHandler(req: Request<UpdateProductParamsInput, {}, UpdateProductInput>, res: Response) {
+export async function updateProductHandler(
+    req: Request<ProductIdInput, {}, UpdateProductInput>,
+    res: Response,
+) {
     const id = req.params.id;
     const productInput = req.body;
 
@@ -49,7 +73,7 @@ export async function updateProductHandler(req: Request<UpdateProductParamsInput
     return respond(res, 200, ok(updatedProduct));
 }
 
-export async function deleteProductHandler(req: Request<DeleteProductInput>, res: Response) {
+export async function deleteProductHandler(req: Request<ProductIdInput>, res: Response) {
     await deleteProduct(req.params.id);
     return res.status(204).send();
 }

@@ -8,6 +8,7 @@ import adminRouter from './modules/admin/admin.router';
 import customerOrderRouter from './modules/customerorder/customerorder.router';
 import purchaseOrderRouter from './modules/purchaseorder/purchaseorder.router';
 import supplierRouter from './modules/supplier/supplier.router';
+import shopRouter from './modules/shop/shop.router';
 import { fail, respond } from './util/apiresponse';
 import { authenticate } from './middleware/authenticate';
 
@@ -26,6 +27,7 @@ app.use('/admin', adminRouter);
 app.use('/customer-order', customerOrderRouter);
 app.use('/purchase-order', purchaseOrderRouter);
 app.use('/supplier', supplierRouter);
+app.use('/shop', shopRouter);
 
 //-- catch all 404
 app.use((_req, res) => {

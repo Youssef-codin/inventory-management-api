@@ -1,11 +1,11 @@
-import { PrismaPg } from '@prisma/adapter-pg'
-import { PrismaClient } from "../../generated/prisma/client";
-import { logger } from "../middleware/logger";
-import { QueryEvent } from "../../generated/prisma/internal/prismaNamespace";
+import { PrismaPg } from '@prisma/adapter-pg';
+import { PrismaClient } from '../../generated/prisma/client';
+import { logger } from '../middleware/logger';
+import { QueryEvent } from '../../generated/prisma/internal/prismaNamespace';
 
-const connectionString = `${process.env.DATABASE_URL}`
+const connectionString = `${process.env.DATABASE_URL}`;
 
-const adapter = new PrismaPg({ connectionString })
+const adapter = new PrismaPg({ connectionString });
 const prisma = new PrismaClient({
     log: [
         {
@@ -25,8 +25,8 @@ const prisma = new PrismaClient({
             level: 'warn',
         },
     ],
-    adapter
-})
+    adapter,
+});
 
 export function logPrismaQuery(event: QueryEvent) {
     const { query, params, duration, target } = event;
@@ -39,41 +39,40 @@ export function logPrismaQuery(event: QueryEvent) {
         // leave as-is
     }
 
-    const message =
-        [
-            "",
-            "┌─── Prisma Query ───────────────────────────────────────",
-            `│ Target:   ${target}`,
-            `│ Duration: ${duration.toFixed(2)} ms`,
-            "│",
-            "│ Query:",
-            ...query
-                .trim()
-                .split("\n")
-                .map((line) => `│   ${line}`),
-            "│",
-            `│ Params: ${prettyParams}`,
-            "└────────────────────────────────────────────────────────",
-            "",
-        ].join("\n");
+    const message = [
+        '',
+        '┌─── Prisma Query ───────────────────────────────────────',
+        `│ Target:   ${target}`,
+        `│ Duration: ${duration.toFixed(2)} ms`,
+        '│',
+        '│ Query:',
+        ...query
+            .trim()
+            .split('\n')
+            .map((line) => `│   ${line}`),
+        '│',
+        `│ Params: ${prettyParams}`,
+        '└────────────────────────────────────────────────────────',
+        '',
+    ].join('\n');
 
     logger.info(message);
 }
 
 prisma.$on('query', (e) => {
     logPrismaQuery(e);
-})
+});
 
 prisma.$on('error', (e) => {
-    logger.info(e);
-})
+    logger.error(e);
+});
 
 prisma.$on('info', (e) => {
     logger.info(e);
-})
+});
 
 prisma.$on('warn', (e) => {
-    logger.info(e);
-})
+    logger.warn(e);
+});
 
-export { prisma }
+export { prisma };

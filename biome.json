@@ -10,17 +10,21 @@
         "formatWithErrors": false,
         "indentStyle": "space",
         "indentWidth": 4,
-        "lineWidth": 80
+        "lineWidth": 110
     },
     "linter": {
         "enabled": true,
         "rules": {
-            "recommended": true
+            "recommended": true,
+            "complexity": {
+                "noBannedTypes": "off"
+            }
         }
     },
     "javascript": {
         "formatter": {
-            "quoteStyle": "single"
+            "quoteStyle": "single",
+            "quoteProperties": "asNeeded"
         }
     }
 }

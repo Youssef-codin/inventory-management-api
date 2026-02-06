@@ -1,6 +1,6 @@
-import app from "./app";
-import { logger } from "./middleware/logger";
-import { initDb } from "./util/db.init";
+import app from './app';
+import { logger } from './middleware/logger';
+import { initDb } from './util/db.init';
 
 const port = process.env.PORT || 3000;
 
@@ -12,7 +12,7 @@ async function start() {
     });
 }
 
-start().catch(err => {
-    logger.error("Failed to start:", err);
+start().catch((err) => {
+    logger.error('Failed to start:', err);
     process.exit(1);
 });

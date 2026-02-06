@@ -1,15 +1,16 @@
 import { Router } from "express";
 import { validate } from "../../middleware/validate";
-import { CreateSupplierSchema, DeleteSupplierSchema, GetSupplierByIdSchema, GetSupplierByProductIdSchema, UpdateSupplierParamsSchema, UpdateSupplierSchema } from "./supplier.schema";
+import { CreateSupplierSchema, SupplierIdSchema, GetSupplierByProductIdSchema, UpdateSupplierSchema } from "./supplier.schema";
 import { createSupplierHandler, deleteSupplierHandler, getAllSuppliersHandler, getSupplierByIdHandler, getSuppliersByProductHandler, updateSupplierHandler } from "./supplier.controller";
+import { inBody, inParams } from "../../util/schema.helper";
 
 const supplierRouter = Router();
 
 supplierRouter.get("/", getAllSuppliersHandler);
-supplierRouter.post("/add", validate(CreateSupplierSchema), createSupplierHandler);
-supplierRouter.get("/product/:productId", validate(GetSupplierByProductIdSchema), getSuppliersByProductHandler);
-supplierRouter.get("/:id", validate(GetSupplierByIdSchema), getSupplierByIdHandler);
-supplierRouter.put("/:id", validate(UpdateSupplierParamsSchema), validate(UpdateSupplierSchema), updateSupplierHandler);
-supplierRouter.delete("/:id", validate(DeleteSupplierSchema), deleteSupplierHandler);
+supplierRouter.post("/add", validate(inBody(CreateSupplierSchema)), createSupplierHandler);
+supplierRouter.get("/product/:productId", validate(inParams(GetSupplierByProductIdSchema)), getSuppliersByProductHandler);
+supplierRouter.get("/:id", validate(inParams(SupplierIdSchema)), getSupplierByIdHandler);
+supplierRouter.put("/:id", validate(inParams(SupplierIdSchema)), validate(inBody(UpdateSupplierSchema)), updateSupplierHandler);
+supplierRouter.delete("/:id", validate(inParams(SupplierIdSchema)), deleteSupplierHandler);
 
 export default supplierRouter;

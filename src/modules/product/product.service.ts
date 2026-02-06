@@ -1,38 +1,37 @@
-import { AppError } from "../../errors/AppError";
-import { ERROR_CODE } from "../../middleware/errorHandler";
-import { prisma } from "../../util/prisma";
-import { CreateProductInput, DeleteProductInput, GetProductByIdInput, UpdateProductInput, UpdateProductParamsInput, UpdateStockInput } from "./product.schema";
+import { AppError } from '../../errors/AppError';
+import { ERROR_CODE } from '../../middleware/errorHandler';
+import { prisma } from '../../util/prisma';
+import { CreateProductInput, UpdateProductInput, PatchStockInput, ProductIdInput } from './product.schema';
 
-async function findProductById(id: GetProductByIdInput['id']) {
+async function findProductById(id: ProductIdInput['id']) {
     return await prisma.product.findUnique({
         where: {
-            id
-        }
+            id,
+        },
     });
 }
 
-export async function updateProductStock(id: UpdateProductParamsInput['id'], amount: UpdateStockInput['amount']) {
+export async function patchProductStock(id: ProductIdInput['id'], amount: PatchStockInput['amount']) {
     const product = await findProductById(id);
 
     if (!product) {
-        throw new AppError(404, "Product with such ID not found", ERROR_CODE.NOT_FOUND);
+        throw new AppError(404, 'Product with such ID not found', ERROR_CODE.NOT_FOUND);
     }
 
     return await prisma.product.update({
         where: {
-            id
+            id,
         },
         data: {
-            stockQuantity: amount
-        }
+            stockQuantity: amount,
+        },
     });
 }
 
-export async function getProductById(id: GetProductByIdInput['id']) {
+export async function getProductById(id: ProductIdInput['id']) {
     const product = await findProductById(id);
 
-    if (!product)
-        throw new AppError(404, "Product with such ID not found", ERROR_CODE.NOT_FOUND);
+    if (!product) throw new AppError(404, 'Product with such ID not found', ERROR_CODE.NOT_FOUND);
 
     return product;
 }
@@ -45,9 +44,9 @@ export async function getLowStockProducts() {
     return await prisma.product.findMany({
         where: {
             stockQuantity: {
-                lte: prisma.product.fields.reorderLevel
-            }
-        }
+                lte: prisma.product.fields.reorderLevel,
+            },
+        },
     });
 }
 
@@ -56,42 +55,40 @@ export async function getProductByName(search: string) {
         where: {
             name: {
                 contains: search,
-                mode: "insensitive"
-            }
-        }
+                mode: 'insensitive',
+            },
+        },
     });
 }
 
 export async function createProduct(data: CreateProductInput) {
     return prisma.product.create({
-        data
+        data,
     });
 }
 
-export async function updateProduct(id: UpdateProductParamsInput['id'], data: UpdateProductInput) {
+export async function updateProduct(id: ProductIdInput['id'], data: UpdateProductInput) {
     const productToUpdate = await findProductById(id);
 
-    if (!productToUpdate)
-        throw new AppError(404, "Product with such ID not found", ERROR_CODE.NOT_FOUND);
+    if (!productToUpdate) throw new AppError(404, 'Product with such ID not found', ERROR_CODE.NOT_FOUND);
 
     return await prisma.product.update({
         where: {
-            id
+            id,
         },
-        data
+        data,
     });
 }
 
-export async function deleteProduct(id: DeleteProductInput['id']) {
+export async function deleteProduct(id: ProductIdInput['id']) {
     const productToDelete = await findProductById(id);
 
-    if (!productToDelete)
-        throw new AppError(404, "Product with such ID not found", ERROR_CODE.NOT_FOUND);
+    if (!productToDelete) throw new AppError(404, 'Product with such ID not found', ERROR_CODE.NOT_FOUND);
 
     await prisma.product.delete({
         where: {
-            id
-        }
+            id,
+        },
     });
 
     return true;

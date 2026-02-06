@@ -1,13 +1,18 @@
-import { AppError } from "../../errors/AppError";
-import { ERROR_CODE } from "../../middleware/errorHandler";
-import { prisma } from "../../util/prisma";
-import { CreateSupplierInput, DeleteSupplierInput, GetSupplierByIdInput, GetSupplierByProductIdInput, UpdateSupplierInput, UpdateSupplierParamsInput } from "./supplier.schema";
+import { AppError } from '../../errors/AppError';
+import { ERROR_CODE } from '../../middleware/errorHandler';
+import { prisma } from '../../util/prisma';
+import {
+    CreateSupplierInput,
+    GetSupplierByProductIdInput,
+    UpdateSupplierInput,
+    SupplierIdInput,
+} from './supplier.schema';
 
-async function findSupplierById(id: GetSupplierByIdInput['id']) {
+async function findSupplierById(id: SupplierIdInput['id']) {
     return await prisma.supplier.findUnique({
         where: {
-            id
-        }
+            id,
+        },
     });
 }
 
@@ -18,20 +23,19 @@ export async function getSuppliersByProduct(productId: GetSupplierByProductIdInp
                 some: {
                     items: {
                         some: {
-                            productId
-                        }
-                    }
-                }
-            }
-        }
+                            productId,
+                        },
+                    },
+                },
+            },
+        },
     });
 }
 
-export async function getSupplierById(id: GetSupplierByIdInput['id']) {
+export async function getSupplierById(id: SupplierIdInput['id']) {
     const supplier = await findSupplierById(id);
 
-    if (!supplier)
-        throw new AppError(404, "Supplier not found", ERROR_CODE.NOT_FOUND);
+    if (!supplier) throw new AppError(404, 'Supplier not found', ERROR_CODE.NOT_FOUND);
 
     return supplier;
 }
@@ -42,34 +46,32 @@ export async function getAllSuppliers() {
 
 export async function createSupplier(data: CreateSupplierInput) {
     return await prisma.supplier.create({
-        data
+        data,
     });
 }
 
-export async function updateSupplier(id: UpdateSupplierParamsInput['id'], data: UpdateSupplierInput) {
+export async function updateSupplier(id: SupplierIdInput['id'], data: UpdateSupplierInput) {
     const exists = await findSupplierById(id);
 
-    if (!exists)
-        throw new AppError(404, "Supplier not found", ERROR_CODE.NOT_FOUND);
+    if (!exists) throw new AppError(404, 'Supplier not found', ERROR_CODE.NOT_FOUND);
 
     return await prisma.supplier.update({
         where: {
-            id
+            id,
         },
-        data
+        data,
     });
 }
 
-export async function deleteSupplier(id: DeleteSupplierInput['id']) {
+export async function deleteSupplier(id: SupplierIdInput['id']) {
     const exists = await findSupplierById(id);
 
-    if (!exists)
-        throw new AppError(404, "Supplier not found", ERROR_CODE.NOT_FOUND);
+    if (!exists) throw new AppError(404, 'Supplier not found', ERROR_CODE.NOT_FOUND);
 
     await prisma.supplier.delete({
         where: {
-            id
-        }
+            id,
+        },
     });
 
     return true;

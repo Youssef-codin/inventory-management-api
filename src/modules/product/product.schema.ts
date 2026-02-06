@@ -1,7 +1,17 @@
-import z from "zod";
-import { Product } from "../../../generated/prisma/client";
-import { Decimal } from "@prisma/client/runtime/client";
-import { inBody, inParams, inQuery } from "../../util/schema.helper";
+import { Decimal } from '@prisma/client/runtime/client';
+import z from 'zod';
+import { Inventory } from '../../../generated/prisma/browser';
+import { Product } from '../../../generated/prisma/client';
+
+const BaseInventorySchema = z.object({
+    productId: z.uuid(),
+    shopId: z.number().positive(),
+    quantity: z.number(),
+}) satisfies z.ZodType<Inventory>;
+
+const InventoryInputSchema = BaseInventorySchema.omit({
+    productId: true,
+});
 
 const BaseProductSchema = z.object({
     id: z.uuid(),
@@ -9,45 +19,43 @@ const BaseProductSchema = z.object({
     category: z.string(),
     unitPrice: z.union([
         z.instanceof(Decimal),
-        z.number().positive().transform(n => new Decimal(n)),
+        z
+            .number()
+            .positive()
+            .transform((n) => new Decimal(n)),
     ]),
-    stockQuantity: z.number().int().default(0),
-    reorderLevel: z.number().int()
-
+    reorderLevel: z.number().int(),
+    inventory: z.array(BaseInventorySchema).min(1),
 }) satisfies z.ZodType<Product>;
 
-export const CreateProductSchema = inBody(BaseProductSchema.omit({
+export const CreateProductSchema = BaseProductSchema.omit({
     id: true,
-}));
+    inventory: true,
+}).extend({
+    inventory: z.array(InventoryInputSchema).min(1),
+});
 
-export const GetProductByIdSchema = inParams(BaseProductSchema.pick({
+export const ProductIdSchema = BaseProductSchema.pick({
     id: true,
-}));
+});
 
-export const GetProductByNameSchema = inQuery(BaseProductSchema.pick({
+export const GetProductByNameSchema = BaseProductSchema.pick({
     name: true,
-}));
+});
 
-export const UpdateProductSchema = inBody(BaseProductSchema.omit({
+export const UpdateProductSchema = BaseProductSchema.omit({
     id: true,
-}));
+    inventory: true,
+}).extend({
+    inventory: z.array(InventoryInputSchema).min(1),
+});
 
-export const UpdateProductParamsSchema = inParams(BaseProductSchema.pick({
-    id: true,
-}));
+export const PatchStockSchema = z.object({
+    amount: z.number().int().min(0),
+});
 
-export const DeleteProductSchema = inParams(BaseProductSchema.pick({
-    id: true,
-}));
-
-export const UpdateStockSchema = inBody(z.object({
-    amount: z.number().int().min(0)
-}));
-
-export type CreateProductInput = z.infer<typeof CreateProductSchema.shape.body>
-export type GetProductByIdInput = z.infer<typeof GetProductByIdSchema.shape.params>
-export type GetProductByNameInput = z.infer<typeof GetProductByNameSchema.shape.query>
-export type UpdateProductInput = z.infer<typeof UpdateProductSchema.shape.body>
-export type UpdateProductParamsInput = z.infer<typeof UpdateProductParamsSchema.shape.params>
-export type DeleteProductInput = z.infer<typeof DeleteProductSchema.shape.params>
-export type UpdateStockInput = z.infer<typeof UpdateStockSchema.shape.body>
+export type ProductIdInput = z.infer<typeof ProductIdSchema>;
+export type CreateProductInput = z.infer<typeof CreateProductSchema>;
+export type GetProductByNameInput = z.infer<typeof GetProductByNameSchema>;
+export type UpdateProductInput = z.infer<typeof UpdateProductSchema>;
+export type PatchStockInput = z.infer<typeof PatchStockSchema>;
