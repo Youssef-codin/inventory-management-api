@@ -87,7 +87,7 @@ paths:
                   data:
                     type: array
                     items:
-                      $ref: '#/components/schemas/Product'
+                      $ref: '#/components/schemas/LowStockProduct'
 
   /product/add:
     post:
@@ -241,7 +241,7 @@ paths:
                     type: boolean
                     example: true
                   data:
-                    $ref: '#/components/schemas/Product'
+                    $ref: '#/components/schemas/Inventory'
         '400':
           description: Validation error
           content:
@@ -1006,6 +1006,14 @@ components:
     # --------------------
     # Product Schemas
     # --------------------
+    Inventory:
+      type: object
+      properties:
+        shopId:
+          type: integer
+        quantity:
+          type: integer
+
     Product:
       type: object
       properties:
@@ -1018,8 +1026,25 @@ components:
           type: string
         unitPrice:
           type: number
-        stockQuantity:
+        reorderLevel:
           type: integer
+        inventories:
+          type: array
+          items:
+            $ref: '#/components/schemas/Inventory'
+
+    LowStockProduct:
+      type: object
+      properties:
+        productId:
+          type: string
+          format: uuid
+        shopId:
+          type: integer
+        quantity:
+          type: integer
+        productName:
+          type: string
         reorderLevel:
           type: integer
 
@@ -1030,6 +1055,7 @@ components:
         - category
         - unitPrice
         - reorderLevel
+        - inventories
       properties:
         name:
           type: string
@@ -1037,11 +1063,12 @@ components:
           type: string
         unitPrice:
           type: number
-        stockQuantity:
-          type: integer
-          default: 0
         reorderLevel:
           type: integer
+        inventories:
+          type: array
+          items:
+            $ref: '#/components/schemas/Inventory'
 
     UpdateProductInput:
       type: object
@@ -1052,20 +1079,25 @@ components:
           type: string
         unitPrice:
           type: number
-        stockQuantity:
-          type: integer
         reorderLevel:
           type: integer
+        inventories:
+          type: array
+          items:
+            $ref: '#/components/schemas/Inventory'
 
     UpdateStockInput:
       type: object
       required:
-        - amount
+        - shopid
+        - newQuantity
       properties:
-        amount:
+        shopid:
+          type: integer
+        newQuantity:
           type: integer
           minimum: 0
-          description: New absolute stock quantity. Must be non-negative.
+          description: New absolute stock quantity for the specified shop. Must be non-negative.
 
     # --------------------
     # Admin Schemas

@@ -1,4 +1,4 @@
-import { CreateAdminInput } from '../modules/admin/admin.schema';
+import type { CreateAdminInput } from '../modules/admin/admin.schema';
 import { createAdmin } from '../modules/admin/admin.service';
 import { prisma } from './prisma';
 

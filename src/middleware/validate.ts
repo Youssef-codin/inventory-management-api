@@ -1,7 +1,7 @@
-import { Request, Response, NextFunction } from 'express';
+import type { NextFunction, Request, Response } from 'express';
 import z from 'zod';
-import { ERROR_CODE } from './errorHandler';
 import { fail, respond } from '../util/apiresponse';
+import { ERROR_CODE } from './errorHandler';
 
 export function validate(schema: z.ZodObject) {
     function middleware(req: Request, res: Response, next: NextFunction) {
@@ -12,14 +12,7 @@ export function validate(schema: z.ZodObject) {
         });
 
         if (!result.success) {
-            return respond(
-                res,
-                400,
-                fail(
-                    z.prettifyError(result.error),
-                    ERROR_CODE.VALIDATION_FAILED,
-                ),
-            );
+            return respond(res, 400, fail(z.prettifyError(result.error), ERROR_CODE.VALIDATION_FAILED));
         }
 
         next();

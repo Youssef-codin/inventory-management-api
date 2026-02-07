@@ -72,11 +72,16 @@ Before running this project, ensure you have the following installed:
 Here is a list of available npm scripts to help you develop and maintain the project:
 
 - **`npm run dev`**: Starts the development server using `tsx` with file watching and `.env` loading.
+- **`npm run start`**: Builds and starts the production server.
 - **`npm run type-check`**: Runs the TypeScript compiler to check for type errors without emitting files.
 - **`npm run migrate <name>`**: Runs Prisma migrations. Replace `<name>` with a descriptive name for your migration.
 - **`npm run generate`**: Generates the Prisma Client based on your `schema.prisma`.
 - **`npm run seed`**: Clears the database and seeds it with demo data (admin, suppliers, products, orders).
 - **`npm run studio`**: Opens Prisma Studio, a visual editor for your database data.
+- **`npm test`**: Runs the integration tests using Vitest.
+- **`npm run test:coverage`**: Runs tests and generates a code coverage report.
+- **`npm run lint`**: Lints and formats the codebase using Biome.
+- **`npm run lint:fix`**: Automatically fixes linting and formatting issues using Biome.
 
 ## API Documentation
 

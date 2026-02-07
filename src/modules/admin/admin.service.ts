@@ -2,7 +2,7 @@ import { AppError } from '../../errors/AppError';
 import { ERROR_CODE } from '../../middleware/errorHandler';
 import { hashPassword } from '../../util/auth';
 import { prisma } from '../../util/prisma';
-import { CreateAdminInput, UpdateAdminInput, AdminIdInput } from './admin.schema';
+import type { AdminIdInput, CreateAdminInput, UpdateAdminInput } from './admin.schema';
 
 async function findById(id: AdminIdInput['id']) {
     return await prisma.admin.findUnique({

@@ -1,6 +1,6 @@
-import z from 'zod';
 import { Decimal } from '@prisma/client/runtime/client';
-import { CustomerOrder, CustomerOrderItem } from '../../../generated/prisma/client';
+import z from 'zod';
+import type { CustomerOrder, CustomerOrderItem } from '../../../generated/prisma/client';
 
 const BaseCustomerOrderItemSchema = z.object({
     id: z.uuid(),

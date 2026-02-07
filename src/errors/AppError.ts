@@ -1,4 +1,4 @@
-import { ERROR_CODE } from "../middleware/errorHandler";
+import type { ERROR_CODE } from '../middleware/errorHandler';
 
 export class AppError extends Error {
     status: number;

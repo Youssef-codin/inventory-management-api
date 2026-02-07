@@ -1,19 +1,19 @@
-import pino from "pino";
-import { Request, Response, NextFunction } from "express";
+import type { NextFunction, Request, Response } from 'express';
+import pino from 'pino';
 
 export const logger = pino({
     transport: {
-        target: "pino-pretty",
+        target: 'pino-pretty',
         options: {
-            colorize: true
-        }
-    }
+            colorize: true,
+        },
+    },
 });
 
 export default function log(req: Request, res: Response, next: NextFunction) {
     logger.info({
         method: req.method,
-        url: req.url
+        url: req.url,
     });
     next();
 }

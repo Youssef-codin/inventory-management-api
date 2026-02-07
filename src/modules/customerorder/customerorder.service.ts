@@ -2,10 +2,10 @@ import { Decimal } from '@prisma/client/runtime/client';
 import { AppError } from '../../errors/AppError';
 import { ERROR_CODE } from '../../middleware/errorHandler';
 import { prisma } from '../../util/prisma';
-import {
+import type {
     CreateCustomerOrderInput,
-    UpdateCustomerOrderInput,
     CustomerOrderIdInput,
+    UpdateCustomerOrderInput,
 } from './customerorder.schema';
 
 async function findById(id: CustomerOrderIdInput['id']) {

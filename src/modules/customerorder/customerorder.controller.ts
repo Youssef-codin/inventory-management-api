@@ -1,9 +1,18 @@
-import { ok, respond } from "../../util/apiresponse";
-import { Request, Response } from "express";
-import { CreateCustomerOrderInput, CustomerOrderIdInput, UpdateCustomerOrderInput } from "./customerorder.schema";
-import { createCustomerOrder, deleteCustomerOrder, getCustomerOrderById, updateCustomerOrder } from "./customerorder.service";
-import { AppError } from "../../errors/AppError";
-import { ERROR_CODE } from "../../middleware/errorHandler";
+import type { Request, Response } from 'express';
+import { AppError } from '../../errors/AppError';
+import { ERROR_CODE } from '../../middleware/errorHandler';
+import { ok, respond } from '../../util/apiresponse';
+import type {
+    CreateCustomerOrderInput,
+    CustomerOrderIdInput,
+    UpdateCustomerOrderInput,
+} from './customerorder.schema';
+import {
+    createCustomerOrder,
+    deleteCustomerOrder,
+    getCustomerOrderById,
+    updateCustomerOrder,
+} from './customerorder.service';
 
 export async function getCustomerOrderByIdHandler(req: Request<CustomerOrderIdInput>, res: Response) {
     const getId = req.params.id;
@@ -12,7 +21,10 @@ export async function getCustomerOrderByIdHandler(req: Request<CustomerOrderIdIn
     return respond(res, 200, ok(customerOrder));
 }
 
-export async function createCustomerOrderHandler(req: Request<{}, {}, CreateCustomerOrderInput>, res: Response) {
+export async function createCustomerOrderHandler(
+    req: Request<{}, {}, CreateCustomerOrderInput>,
+    res: Response,
+) {
     const reqAdminId = res.locals.id;
 
     const customerOrderInput = req.body;
@@ -21,10 +33,17 @@ export async function createCustomerOrderHandler(req: Request<{}, {}, CreateCust
     return respond(res, 201, ok(newCustomerOrder));
 }
 
-export async function updateCustomerOrderHandler(req: Request<CustomerOrderIdInput, {}, UpdateCustomerOrderInput>, res: Response) {
+export async function updateCustomerOrderHandler(
+    req: Request<CustomerOrderIdInput, {}, UpdateCustomerOrderInput>,
+    res: Response,
+) {
     const reqAdminId = res.locals.id;
     if (reqAdminId !== req.body.adminId)
-        throw new AppError(403, "Unauthorized: cannot create customer order for another admin.", ERROR_CODE.UNAUTHORIZED)
+        throw new AppError(
+            403,
+            'Unauthorized: cannot create customer order for another admin.',
+            ERROR_CODE.UNAUTHORIZED,
+        );
 
     const customerOrderInput = req.body;
     const id = req.params.id;

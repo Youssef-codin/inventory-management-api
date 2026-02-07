@@ -1,8 +1,8 @@
 import { Router } from 'express';
 import { validate } from '../../middleware/validate';
-import { CredentialsSchema } from './auth.schema';
-import { loginHandler } from './auth.controller';
 import { inBody } from '../../util/schema.helper';
+import { loginHandler } from './auth.controller';
+import { CredentialsSchema } from './auth.schema';
 
 const authRouter = Router();
 

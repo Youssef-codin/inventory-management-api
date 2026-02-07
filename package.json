@@ -14,8 +14,8 @@
         "seed": "tsx --env-file .env src/scripts/seed.ts",
         "test": "vitest",
         "test:coverage": "vitest --coverage",
-        "lint": "eslint src --ext .ts",
-        "lint:fix": "eslint src --ext .ts --fix"
+        "lint": "biome check src",
+        "lint:fix": "biome check --write src"
     },
     "keywords": [],
     "author": "",

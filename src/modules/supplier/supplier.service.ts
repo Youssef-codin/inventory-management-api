@@ -1,11 +1,11 @@
 import { AppError } from '../../errors/AppError';
 import { ERROR_CODE } from '../../middleware/errorHandler';
 import { prisma } from '../../util/prisma';
-import {
+import type {
     CreateSupplierInput,
     GetSupplierByProductIdInput,
-    UpdateSupplierInput,
     SupplierIdInput,
+    UpdateSupplierInput,
 } from './supplier.schema';
 
 async function findSupplierById(id: SupplierIdInput['id']) {

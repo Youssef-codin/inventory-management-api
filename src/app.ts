@@ -1,16 +1,16 @@
 import express from 'express';
 import helmet from 'helmet';
+import { authenticate } from './middleware/authenticate';
 import errorHandler, { ERROR_CODE } from './middleware/errorHandler';
 import log from './middleware/logger';
-import authRouter from './modules/auth/auth.router';
-import productRouter from './modules/product/product.router';
 import adminRouter from './modules/admin/admin.router';
+import authRouter from './modules/auth/auth.router';
 import customerOrderRouter from './modules/customerorder/customerorder.router';
+import productRouter from './modules/product/product.router';
 import purchaseOrderRouter from './modules/purchaseorder/purchaseorder.router';
-import supplierRouter from './modules/supplier/supplier.router';
 import shopRouter from './modules/shop/shop.router';
+import supplierRouter from './modules/supplier/supplier.router';
 import { fail, respond } from './util/apiresponse';
-import { authenticate } from './middleware/authenticate';
 
 const app = express();
 

@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import { validate } from '../../middleware/validate';
+import { inBody, inParams } from '../../util/schema.helper';
 import {
     createShopHandler,
     deleteShopHandler,
@@ -8,7 +9,6 @@ import {
     updateShopHandler,
 } from './shop.controller';
 import { CreateShopSchema, ShopIdSchema, UpdateShopSchema } from './shop.schema';
-import { inBody, inParams } from '../../util/schema.helper';
 
 const shopRouter = Router();
 shopRouter.get('/', getAllShopsHandler);

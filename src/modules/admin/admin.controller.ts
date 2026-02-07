@@ -1,7 +1,14 @@
-import { ok, respond } from "../../util/apiresponse";
-import { Request, Response } from "express";
-import { AdminIdInput, CreateAdminInput, GetAdminByNameInput, UpdateAdminInput } from "./admin.schema";
-import { createAdmin, deleteAdmin, getAdminById, getAdminByName, getAllAdmins, updateAdmin } from "./admin.service";
+import type { Request, Response } from 'express';
+import { ok, respond } from '../../util/apiresponse';
+import type { AdminIdInput, CreateAdminInput, GetAdminByNameInput, UpdateAdminInput } from './admin.schema';
+import {
+    createAdmin,
+    deleteAdmin,
+    getAdminById,
+    getAdminByName,
+    getAllAdmins,
+    updateAdmin,
+} from './admin.service';
 
 export async function getAllAdminsHandler(req: Request, res: Response) {
     const admins = await getAllAdmins();

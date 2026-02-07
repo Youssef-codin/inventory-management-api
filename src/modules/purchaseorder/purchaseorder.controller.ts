@@ -1,7 +1,17 @@
-import { ok, respond } from "../../util/apiresponse";
-import { Request, Response } from "express";
-import { CreatePurchaseOrderInput, PurchaseOrderIdInput, UpdatePurchaseOrderInput } from "./purchaseorder.schema";
-import { createPurchaseOrder, deletePurchaseOrder, getPurchaseOrderById, orderArrived, updatePurchaseOrder } from "./purchaseorder.service";
+import type { Request, Response } from 'express';
+import { ok, respond } from '../../util/apiresponse';
+import type {
+    CreatePurchaseOrderInput,
+    PurchaseOrderIdInput,
+    UpdatePurchaseOrderInput,
+} from './purchaseorder.schema';
+import {
+    createPurchaseOrder,
+    deletePurchaseOrder,
+    getPurchaseOrderById,
+    orderArrived,
+    updatePurchaseOrder,
+} from './purchaseorder.service';
 
 export async function getPurchaseOrderByIdHandler(req: Request<PurchaseOrderIdInput>, res: Response) {
     const getId = req.params.id;
@@ -10,7 +20,10 @@ export async function getPurchaseOrderByIdHandler(req: Request<PurchaseOrderIdIn
     return respond(res, 200, ok(purchaseOrder));
 }
 
-export async function createPurchaseOrderHandler(req: Request<{}, {}, CreatePurchaseOrderInput>, res: Response) {
+export async function createPurchaseOrderHandler(
+    req: Request<{}, {}, CreatePurchaseOrderInput>,
+    res: Response,
+) {
     const reqAdminId = res.locals.id;
 
     const purchaseOrderInput = req.body;
@@ -19,7 +32,10 @@ export async function createPurchaseOrderHandler(req: Request<{}, {}, CreatePurc
     return respond(res, 201, ok(newPurchaseOrder));
 }
 
-export async function updatePurchaseOrderHandler(req: Request<PurchaseOrderIdInput, {}, UpdatePurchaseOrderInput>, res: Response) {
+export async function updatePurchaseOrderHandler(
+    req: Request<PurchaseOrderIdInput, {}, UpdatePurchaseOrderInput>,
+    res: Response,
+) {
     const reqAdminId = res.locals.id;
     const purchaseOrderInput = req.body;
     const id = req.params.id;
@@ -34,7 +50,6 @@ export async function orderArrivedHandler(req: Request<PurchaseOrderIdInput>, re
 }
 
 export async function deletePurchaseOrderHandler(req: Request<PurchaseOrderIdInput>, res: Response) {
-
     await deletePurchaseOrder(req.params.id);
     return res.status(204).send();
 }

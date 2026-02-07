@@ -12,10 +12,7 @@ export function inBody<B extends z.ZodObject<any>>(object: B) {
     });
 }
 
-export function inBodyAndParams<P extends z.ZodObject, B extends z.ZodObject>(
-    params: P,
-    object: B,
-) {
+export function inBodyAndParams<P extends z.ZodObject, B extends z.ZodObject>(params: P, object: B) {
     return z.object({
         params: params,
         body: object,

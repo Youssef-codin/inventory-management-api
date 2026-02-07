@@ -1,7 +1,7 @@
+import type { Request, Response } from 'express';
 import { ok, respond } from '../../util/apiresponse';
-import { Request, Response } from 'express';
+import type { CreateShopInput, ShopIdInputStr, UpdateShopInput } from './shop.schema';
 import { createShop, deleteShop, getAllShops, getShopById, updateShop } from './shop.service';
-import { CreateShopInput, ShopIdInputStr, UpdateShopInput } from './shop.schema';
 
 export async function getAllShopsHandler(_req: Request, res: Response) {
     const shops = await getAllShops();

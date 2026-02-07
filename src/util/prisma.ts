@@ -1,7 +1,7 @@
 import { PrismaPg } from '@prisma/adapter-pg';
 import { PrismaClient } from '../../generated/prisma/client';
+import type { QueryEvent } from '../../generated/prisma/internal/prismaNamespace';
 import { logger } from '../middleware/logger';
-import { QueryEvent } from '../../generated/prisma/internal/prismaNamespace';
 
 const connectionString = `${process.env.DATABASE_URL}`;
 

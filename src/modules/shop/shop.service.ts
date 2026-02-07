@@ -1,7 +1,7 @@
 import { AppError } from '../../errors/AppError';
 import { ERROR_CODE } from '../../middleware/errorHandler';
 import { prisma } from '../../util/prisma';
-import { CreateShopInput, ShopIdInputNumber, UpdateShopInput } from './shop.schema';
+import type { CreateShopInput, ShopIdInputNumber, UpdateShopInput } from './shop.schema';
 
 async function findShopById(id: ShopIdInputNumber['id']) {
     return await prisma.shop.findUnique({
