@@ -202,12 +202,6 @@ describe('Supplier Module', () => {
                         expect(response.status).toBe(400);
                         expect(response.body.error?.code).toBe('VALIDATION_FAILED');
                     });
-            
-                    it('should return 401 if not authenticated', async () => {
-                        const uuid = '00000000-0000-0000-0000-000000000000';
-                        const response = await request(app).get(`/supplier/product/${uuid}`);
-                        expect(response.status).toBe(401);
-                        expect(response.body.error?.code).toBe('UNAUTHENTICATED');
-                    });
                 });
-            });});
+            });
+        });

@@ -29,33 +29,9 @@ const prisma = new PrismaClient({
 });
 
 export function logPrismaQuery(event: QueryEvent) {
-    const { query, params, duration, target } = event;
-
-    // Try to prettify params for clarity
-    let prettyParams = params;
-    try {
-        prettyParams = JSON.stringify(JSON.parse(params), null, 2);
-    } catch {
-        // leave as-is
-    }
-
-    const message = [
-        '',
-        '┌─── Prisma Query ───────────────────────────────────────',
-        `│ Target:   ${target}`,
-        `│ Duration: ${duration.toFixed(2)} ms`,
-        '│',
-        '│ Query:',
-        ...query
-            .trim()
-            .split('\n')
-            .map((line) => `│   ${line}`),
-        '│',
-        `│ Params: ${prettyParams}`,
-        '└────────────────────────────────────────────────────────',
-        '',
-    ].join('\n');
-
+    const { query, params, duration } = event;
+    const cleanQuery = query.replace(/\s+/g, ' ').trim();
+    const message = `[Prisma] ${duration.toFixed(2)}ms | ${cleanQuery} | Params: ${params}`;
     logger.info(message);
 }
 

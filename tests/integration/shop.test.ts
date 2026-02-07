@@ -29,12 +29,8 @@ describe('Shop Module', () => {
             expect(response.status).toBe(200);
             expect(response.body.success).toBe(true);
             expect(response.body.data).toHaveLength(2);
-        });
-
-        it('should return 401 if not authenticated', async () => {
-            const response = await request(app).get('/shop');
-            expect(response.status).toBe(401);
-            expect(response.body.error?.code).toBe('UNAUTHENTICATED');
+            expect(response.body.data.some((s: any) => s.name === 'Shop 1')).toBe(true);
+            expect(response.body.data.some((s: any) => s.name === 'Shop 2')).toBe(true);
         });
     });
 

@@ -1,3 +1,4 @@
+import { includes } from 'zod';
 import { AppError } from '../../errors/AppError';
 import { ERROR_CODE } from '../../middleware/errorHandler';
 import { prisma } from '../../util/prisma';
@@ -59,7 +60,21 @@ export async function getProductByName(search: string) {
 
 export async function createProduct(data: CreateProductInput) {
     return prisma.product.create({
-        data,
+        data: {
+            name: data.name,
+            category: data.category,
+            unitPrice: data.unitPrice,
+            reorderLevel: data.reorderLevel,
+            inventories: {
+                create: data.inventories.map((inv) => ({
+                    shopId: inv.shopId,
+                    quantity: inv.quantity,
+                })),
+            },
+        },
+        include: {
+            inventories: true,
+        },
     });
 }
 
@@ -70,11 +85,28 @@ export async function updateProduct(id: ProductIdInput['id'], data: UpdateProduc
         throw new AppError(404, 'Product with such ID not found', ERROR_CODE.NOT_FOUND);
     }
 
-    return await prisma.product.update({
-        where: {
-            id,
-        },
-        data,
+    return await prisma.$transaction(async (tx) => {
+        await tx.inventory.deleteMany({
+            where: { productId: id },
+        });
+
+        return await tx.product.update({
+            where: { id },
+            data: {
+                name: data.name,
+                category: data.category,
+                unitPrice: data.unitPrice,
+                reorderLevel: data.reorderLevel,
+
+                inventories: {
+                    create: data.inventories.map((inv) => ({
+                        shopId: inv.shopId,
+                        quantity: inv.quantity,
+                    })),
+                },
+            },
+            include: { inventories: true },
+        });
     });
 }
 

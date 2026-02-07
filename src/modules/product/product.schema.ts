@@ -1,7 +1,7 @@
 import { Decimal } from '@prisma/client/runtime/client';
 import z from 'zod';
-import { Inventory } from '../../../generated/prisma/browser';
-import { Product } from '../../../generated/prisma/client';
+import type { Inventory } from '../../../generated/prisma/browser';
+import type { Product } from '../../../generated/prisma/client';
 
 const BaseInventorySchema = z.object({
     productId: z.uuid(),
@@ -25,14 +25,14 @@ const BaseProductSchema = z.object({
             .transform((n) => new Decimal(n)),
     ]),
     reorderLevel: z.number().int(),
-    inventory: z.array(BaseInventorySchema).min(1),
+    inventories: z.array(BaseInventorySchema).min(1),
 }) satisfies z.ZodType<Product>;
 
 export const CreateProductSchema = BaseProductSchema.omit({
     id: true,
-    inventory: true,
+    inventories: true,
 }).extend({
-    inventory: z.array(InventoryInputSchema).min(1),
+    inventories: z.array(InventoryInputSchema).min(1),
 });
 
 export const ProductIdSchema = BaseProductSchema.pick({
@@ -45,9 +45,9 @@ export const GetProductByNameSchema = BaseProductSchema.pick({
 
 export const UpdateProductSchema = BaseProductSchema.omit({
     id: true,
-    inventory: true,
+    inventories: true,
 }).extend({
-    inventory: z.array(InventoryInputSchema).min(1),
+    inventories: z.array(InventoryInputSchema).min(1),
 });
 
 export const PatchStockSchema = z.object({

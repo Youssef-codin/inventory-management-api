@@ -26,6 +26,13 @@ describe('Global Error Handling', () => {
     expect(response.body.error.code).toBe('NOT_FOUND');
   });
 
+  it('should return 401 if Authorization header is missing', async () => {
+    const response = await request(app).get('/product');
+    expect(response.status).toBe(401);
+    expect(response.body.success).toBe(false);
+    expect(response.body.error.code).toBe('UNAUTHENTICATED');
+  });
+
   it('should return 401 for an invalid JWT', async () => {
     const invalidToken = 'invalid.jwt.token';
     const response = await request(app)
