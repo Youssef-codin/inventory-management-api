@@ -1,9 +1,9 @@
 import { AppError } from '../../errors/AppError';
 import { ERROR_CODE } from '../../middleware/errorHandler';
 import { prisma } from '../../util/prisma';
-import { CreateShopInput, ShopIdInput, UpdateShopInput } from './shop.schema';
+import { CreateShopInput, ShopIdInputNumber, UpdateShopInput } from './shop.schema';
 
-async function findShopById(id: ShopIdInput['id']) {
+async function findShopById(id: ShopIdInputNumber['id']) {
     return await prisma.shop.findUnique({
         where: {
             id,
@@ -11,7 +11,7 @@ async function findShopById(id: ShopIdInput['id']) {
     });
 }
 
-export async function getShopById(id: ShopIdInput['id']) {
+export async function getShopById(id: ShopIdInputNumber['id']) {
     const shop = await findShopById(id);
 
     if (!shop) throw new AppError(404, 'Shop not found', ERROR_CODE.NOT_FOUND);
@@ -29,7 +29,7 @@ export async function createShop(data: CreateShopInput) {
     });
 }
 
-export async function updateShop(id: ShopIdInput['id'], data: UpdateShopInput) {
+export async function updateShop(id: ShopIdInputNumber['id'], data: UpdateShopInput) {
     const exists = await findShopById(id);
 
     if (!exists) throw new AppError(404, 'Shop not found', ERROR_CODE.NOT_FOUND);
@@ -42,7 +42,7 @@ export async function updateShop(id: ShopIdInput['id'], data: UpdateShopInput) {
     });
 }
 
-export async function deleteShop(id: ShopIdInput['id']) {
+export async function deleteShop(id: ShopIdInputNumber['id']) {
     const exists = await findShopById(id);
 
     if (!exists) throw new AppError(404, 'Shop not found', ERROR_CODE.NOT_FOUND);

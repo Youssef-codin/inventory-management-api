@@ -1,11 +1,11 @@
+import type { Request, Response } from 'express';
 import { ok, respond } from '../../util/apiresponse';
-import { Request, Response } from 'express';
-import {
+import type {
     CreateProductInput,
     GetProductByNameInput,
-    UpdateProductInput,
     PatchStockInput,
     ProductIdInput,
+    UpdateProductInput,
 } from './product.schema';
 import {
     createProduct,
@@ -14,8 +14,8 @@ import {
     getLowStockProducts,
     getProductById,
     getProductByName,
-    updateProduct,
     patchProductStock,
+    updateProduct,
 } from './product.service';
 
 export async function getAllProductsHandler(_req: Request, res: Response) {
@@ -33,8 +33,10 @@ export async function patchProductStockHandler(
     res: Response,
 ) {
     const id = req.params.id;
-    const amount = req.body.amount;
-    const updatedProduct = await patchProductStock(id, amount);
+    const newQuantity = req.body.newQuantity;
+    const shopId = req.body.shopid;
+    const updatedProduct = await patchProductStock(id, newQuantity, shopId);
+
     return respond(res, 200, ok(updatedProduct));
 }
 

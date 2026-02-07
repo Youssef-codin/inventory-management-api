@@ -1,7 +1,12 @@
 import { AppError } from '../../errors/AppError';
 import { ERROR_CODE } from '../../middleware/errorHandler';
 import { prisma } from '../../util/prisma';
-import { CreateProductInput, UpdateProductInput, PatchStockInput, ProductIdInput } from './product.schema';
+import type {
+    CreateProductInput,
+    PatchStockInput,
+    ProductIdInput,
+    UpdateProductInput,
+} from './product.schema';
 
 async function findProductById(id: ProductIdInput['id']) {
     return await prisma.product.findUnique({
@@ -11,29 +16,14 @@ async function findProductById(id: ProductIdInput['id']) {
     });
 }
 
-export async function patchProductStock(id: ProductIdInput['id'], amount: PatchStockInput['amount']) {
-    const product = await findProductById(id);
+export async function getProductById(id: ProductIdInput['id']) {
+    const productToRtrn = await findProductById(id);
 
-    if (!product) {
+    if (!productToRtrn) {
         throw new AppError(404, 'Product with such ID not found', ERROR_CODE.NOT_FOUND);
     }
 
-    return await prisma.product.update({
-        where: {
-            id,
-        },
-        data: {
-            stockQuantity: amount,
-        },
-    });
-}
-
-export async function getProductById(id: ProductIdInput['id']) {
-    const product = await findProductById(id);
-
-    if (!product) throw new AppError(404, 'Product with such ID not found', ERROR_CODE.NOT_FOUND);
-
-    return product;
+    return productToRtrn;
 }
 
 export async function getAllProducts() {
@@ -41,13 +31,19 @@ export async function getAllProducts() {
 }
 
 export async function getLowStockProducts() {
-    return await prisma.product.findMany({
-        where: {
-            stockQuantity: {
-                lte: prisma.product.fields.reorderLevel,
-            },
-        },
-    });
+    const result = await prisma.$queryRaw<
+        { productId: string; shopId: number; quantity: number; productName: string; reorderLevel: number }[]
+    >`
+    SELECT i."productId",
+           i."shopId",
+           i."quantity",
+           p."name" as "productName",
+           p."reorderLevel"
+    FROM "Inventory" i
+    JOIN "Product" p ON i."productId" = p."id"
+    WHERE i."quantity" <= p."reorderLevel";
+  `;
+    return result;
 }
 
 export async function getProductByName(search: string) {
@@ -70,7 +66,9 @@ export async function createProduct(data: CreateProductInput) {
 export async function updateProduct(id: ProductIdInput['id'], data: UpdateProductInput) {
     const productToUpdate = await findProductById(id);
 
-    if (!productToUpdate) throw new AppError(404, 'Product with such ID not found', ERROR_CODE.NOT_FOUND);
+    if (!productToUpdate) {
+        throw new AppError(404, 'Product with such ID not found', ERROR_CODE.NOT_FOUND);
+    }
 
     return await prisma.product.update({
         where: {
@@ -80,10 +78,55 @@ export async function updateProduct(id: ProductIdInput['id'], data: UpdateProduc
     });
 }
 
+export async function patchProductStock(
+    productId: ProductIdInput['id'],
+    newQuantity: PatchStockInput['newQuantity'],
+    shopId: PatchStockInput['shopid'],
+) {
+    const product = await findProductById(productId);
+
+    if (!product) {
+        throw new AppError(404, 'Product with such ID not found', ERROR_CODE.NOT_FOUND);
+    }
+
+    const existingInventory = await prisma.inventory.findUnique({
+        where: {
+            productId_shopId: {
+                productId,
+                shopId,
+            },
+        },
+    });
+
+    if (existingInventory) {
+        return prisma.inventory.update({
+            where: {
+                productId_shopId: {
+                    productId,
+                    shopId,
+                },
+            },
+            data: {
+                quantity: newQuantity < 0 ? 0 : newQuantity, // extra safeguard against negative quantity
+            },
+        });
+    }
+
+    return prisma.inventory.create({
+        data: {
+            productId,
+            shopId,
+            quantity: newQuantity,
+        },
+    });
+}
+
 export async function deleteProduct(id: ProductIdInput['id']) {
     const productToDelete = await findProductById(id);
 
-    if (!productToDelete) throw new AppError(404, 'Product with such ID not found', ERROR_CODE.NOT_FOUND);
+    if (!productToDelete) {
+        throw new AppError(404, 'Product with such ID not found', ERROR_CODE.NOT_FOUND);
+    }
 
     await prisma.product.delete({
         where: {

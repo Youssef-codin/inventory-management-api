@@ -51,7 +51,8 @@ export const UpdateProductSchema = BaseProductSchema.omit({
 });
 
 export const PatchStockSchema = z.object({
-    amount: z.number().int().min(0),
+    shopid: z.number(),
+    newQuantity: z.number().int().min(0),
 });
 
 export type ProductIdInput = z.infer<typeof ProductIdSchema>;

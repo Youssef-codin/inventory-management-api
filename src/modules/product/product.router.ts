@@ -1,12 +1,6 @@
 import { Router } from 'express';
 import { validate } from '../../middleware/validate';
-import {
-    CreateProductSchema,
-    UpdateProductSchema,
-    PatchStockSchema,
-    GetProductByNameSchema,
-    ProductIdSchema,
-} from './product.schema';
+import { inBody, inParams, inQuery } from '../../util/schema.helper';
 import {
     createProductHandler,
     deleteProductHandler,
@@ -14,10 +8,16 @@ import {
     getLowStockProductsHandler,
     getProductByIdHandler,
     getProductByNameHandler,
+    patchProductStockHandler,
     updateProductHandler,
-    patchProductStockHandler as patchProductStockHandler,
 } from './product.controller';
-import { inBody, inParams, inQuery } from '../../util/schema.helper';
+import {
+    CreateProductSchema,
+    GetProductByNameSchema,
+    PatchStockSchema,
+    ProductIdSchema,
+    UpdateProductSchema,
+} from './product.schema';
 
 const productRouter = Router();
 
