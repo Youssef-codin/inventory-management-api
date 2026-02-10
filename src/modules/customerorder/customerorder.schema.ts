@@ -25,25 +25,36 @@ const BaseCustomerOrderSchema = z.object({
     items: z.array(BaseCustomerOrderItemSchema).min(1),
 }) satisfies z.ZodType<CustomerOrder>;
 
-const itemsInputSchema = BaseCustomerOrderSchema.shape.items.element
-    .omit({
-        id: true,
-        customerOrderId: true,
-    })
-    .omit({
-        unitPrice: true,
-    });
+export const CustomerOrderIdSchema = BaseCustomerOrderSchema.pick({
+    id: true,
+});
+
+const itemsInputSchema = BaseCustomerOrderItemSchema.omit({
+    id: true,
+    customerOrderId: true,
+    unitPrice: true,
+});
+
+const itemsArrayWithUniqueProducts = z
+    .array(itemsInputSchema)
+    .min(1, 'Order must contain at least one item')
+    .refine(
+        (items) => {
+            const productIds = items.map((i) => i.productId);
+            return new Set(productIds).size === productIds.length;
+        },
+        {
+            message: 'Duplicate productId found in items',
+            path: ['items'],
+        },
+    );
 
 export const CreateCustomerOrderSchema = BaseCustomerOrderSchema.omit({
     id: true,
     items: true,
     totalAmount: true,
 }).extend({
-    items: z.array(itemsInputSchema).min(1),
-});
-
-export const CustomerOrderIdSchema = BaseCustomerOrderSchema.pick({
-    id: true,
+    items: itemsArrayWithUniqueProducts,
 });
 
 export const UpdateCustomerOrderSchema = BaseCustomerOrderSchema.omit({
@@ -51,7 +62,7 @@ export const UpdateCustomerOrderSchema = BaseCustomerOrderSchema.omit({
     items: true,
     totalAmount: true,
 }).extend({
-    items: z.array(itemsInputSchema),
+    items: itemsArrayWithUniqueProducts,
 });
 
 export type CreateCustomerOrderInput = z.infer<typeof CreateCustomerOrderSchema>;

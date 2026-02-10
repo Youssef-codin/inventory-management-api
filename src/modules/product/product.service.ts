@@ -8,6 +8,7 @@ import type {
     ProductIdInput,
     UpdateProductInput,
 } from './product.schema';
+import { getLowStock } from '../shared/inventory.service';
 
 async function findProductById(id: ProductIdInput['id']) {
     return await prisma.product.findUnique({
@@ -32,19 +33,7 @@ export async function getAllProducts() {
 }
 
 export async function getLowStockProducts() {
-    const result = await prisma.$queryRaw<
-        { productId: string; shopId: number; quantity: number; productName: string; reorderLevel: number }[]
-    >`
-    SELECT i."productId",
-           i."shopId",
-           i."quantity",
-           p."name" as "productName",
-           p."reorderLevel"
-    FROM "Inventory" i
-    JOIN "Product" p ON i."productId" = p."id"
-    WHERE i."quantity" <= p."reorderLevel";
-  `;
-    return result;
+    return await getLowStock();
 }
 
 export async function getProductByName(search: string) {
@@ -59,7 +48,7 @@ export async function getProductByName(search: string) {
 }
 
 export async function createProduct(data: CreateProductInput) {
-    return prisma.product.create({
+    return await prisma.product.create({
         data: {
             name: data.name,
             category: data.category,
@@ -131,7 +120,7 @@ export async function patchProductStock(
     });
 
     if (existingInventory) {
-        return prisma.inventory.update({
+        return await prisma.inventory.update({
             where: {
                 productId_shopId: {
                     productId,
@@ -144,7 +133,7 @@ export async function patchProductStock(
         });
     }
 
-    return prisma.inventory.create({
+    return await prisma.inventory.create({
         data: {
             productId,
             shopId,

@@ -15,8 +15,8 @@ import {
 
 const customerOrderRouter = Router();
 
-customerOrderRouter.post('/add', validate(inBody(CreateCustomerOrderSchema)), createCustomerOrderHandler);
 customerOrderRouter.get('/:id', validate(inParams(CustomerOrderIdSchema)), getCustomerOrderByIdHandler);
+customerOrderRouter.post('/add', validate(inBody(CreateCustomerOrderSchema)), createCustomerOrderHandler);
 customerOrderRouter.put(
     '/:id',
     validate(inParams(CustomerOrderIdSchema)),

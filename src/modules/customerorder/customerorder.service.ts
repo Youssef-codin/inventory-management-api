@@ -1,12 +1,15 @@
+/** biome-ignore-all lint/style/noNonNullAssertion: we already check if the items and products are there */
 import { Decimal } from '@prisma/client/runtime/client';
 import { AppError } from '../../errors/AppError';
 import { ERROR_CODE } from '../../middleware/errorHandler';
 import { prisma } from '../../util/prisma';
+import { getLowStock } from '../shared/inventory.service';
 import type {
     CreateCustomerOrderInput,
     CustomerOrderIdInput,
     UpdateCustomerOrderInput,
 } from './customerorder.schema';
+import { CustomerOrderItem } from '../../../generated/prisma/client';
 
 async function findById(id: CustomerOrderIdInput['id']) {
     return await prisma.customerOrder.findUnique({
@@ -28,7 +31,7 @@ export async function getCustomerOrderById(id: CustomerOrderIdInput['id']) {
 }
 
 export async function getAllCustomerOrders() {
-    return prisma.customerOrder.findMany({
+    return await prisma.customerOrder.findMany({
         orderBy: {
             orderDate: 'desc',
         },
@@ -58,19 +61,32 @@ export async function createCustomerOrder(requestingAdminId: string, data: Creat
         throw new AppError(404, 'One or more products not found', ERROR_CODE.NOT_FOUND);
     }
 
-    const itemQuantity = data.items.map((item) => ({
-        id: item.productId,
-        quantity: item.quantity,
-    }));
+    const itemsQuantity = data.items;
 
-    products.forEach((prod) => {
-        const item = itemQuantity.find((i) => i.id === prod.id);
-        if (item!.quantity > prod.stockQuantity)
-            throw new AppError(400, 'Insufficient Stock for customer Order', ERROR_CODE.INSUFFICIENT_STOCK);
-    });
+    // make sure each item from the order can be fulfilled by our inventory
+    for (const prod of products) {
+        const availableStock = await prisma.inventory.findUnique({
+            where: {
+                productId_shopId: {
+                    productId: prod.id,
+                    shopId: data.shopId,
+                },
+            },
+            select: {
+                quantity: true,
+            },
+        });
 
+        const requestedItemQuantity = itemsQuantity.find((item) => item.productId === prod.id)?.quantity;
+
+        if (requestedItemQuantity! > availableStock!.quantity) {
+            throw new AppError(400, 'Insufficient Stock for customer order', ERROR_CODE.INSUFFICIENT_STOCK);
+        }
+    }
+
+    // calculate total amount
     const total = products.reduce((sum, prod) => {
-        const item = itemQuantity.find((i) => i.id === prod.id);
+        const item = itemsQuantity.find((i) => i.productId === prod.id);
         return sum + item!.quantity * prod.unitPrice.toNumber();
     }, 0);
 
@@ -80,6 +96,7 @@ export async function createCustomerOrder(requestingAdminId: string, data: Creat
                 adminId: data.adminId,
                 orderDate: data.orderDate || new Date(),
                 totalAmount: new Decimal(total),
+                shopId: data.shopId,
                 items: {
                     create: data.items.map((item) => ({
                         productId: item.productId,
@@ -93,11 +110,17 @@ export async function createCustomerOrder(requestingAdminId: string, data: Creat
             },
         });
 
+        // update inventory with the new quantity
         for (const item of data.items) {
-            await tx.product.update({
-                where: { id: item.productId },
+            await tx.inventory.update({
+                where: {
+                    productId_shopId: {
+                        productId: item.productId,
+                        shopId: data.shopId,
+                    },
+                },
                 data: {
-                    stockQuantity: {
+                    quantity: {
                         decrement: item.quantity,
                     },
                 },
@@ -107,20 +130,11 @@ export async function createCustomerOrder(requestingAdminId: string, data: Creat
         return order;
     });
 
-    const lowStockProductIds = await prisma.product.findMany({
-        where: {
-            stockQuantity: {
-                lte: prisma.product.fields.reorderLevel,
-            },
-        },
-        select: {
-            id: true,
-        },
-    });
+    const lowStockProducts = await getLowStock();
 
     return {
         order,
-        lowStockProductIds,
+        lowStockProducts,
     };
 }
 
@@ -132,62 +146,193 @@ export async function updateCustomerOrder(
     if (requestingAdminId !== data.adminId)
         throw new AppError(
             403,
-            'Unauthorized: cannot create customer order for another admin.',
+            'Unauthorized: cannot update customer order for another admin.',
             ERROR_CODE.UNAUTHORIZED,
         );
 
-    const exists = await findById(id);
+    const existingOrder = await findById(id);
 
-    if (!exists) throw new AppError(404, 'Customer order by this ID does not exist', ERROR_CODE.NOT_FOUND);
+    if (!existingOrder) {
+        throw new AppError(404, 'Customer order by this ID does not exist', ERROR_CODE.NOT_FOUND);
+    }
 
+    // make sure products exist
     const productIds = data.items.map((item) => item.productId);
     const products = await prisma.product.findMany({
-        where: {
-            id: {
-                in: productIds,
-            },
-        },
+        where: { id: { in: productIds } },
     });
 
     if (products.length !== productIds.length) {
         throw new AppError(404, 'One or more products not found', ERROR_CODE.NOT_FOUND);
     }
 
-    const total = data.items.reduce((sum, item) => {
-        return sum + item.quantity * products.find((p) => p.id === item.productId)!.unitPrice.toNumber();
+    //TODO: deal with shop change
+    if (existingOrder.shopId !== data.shopId) {
+        throw new AppError(400, 'Shop change not yet implemented', ERROR_CODE.VALIDATION_FAILED);
+    }
+
+    // split items into added, removed, and common
+    const oldItems = existingOrder.items;
+    const newItems = data.items;
+
+    const oldIds = new Set(oldItems.map((i) => i.productId));
+    const newIds = new Set(newItems.map((i) => i.productId));
+
+    // this is what is going to be worked on
+    const addedItems = newItems.filter((i) => !oldIds.has(i.productId));
+    const removedItems = oldItems.filter((i) => !newIds.has(i.productId));
+    const commonItems = newItems
+        .filter((i) => oldIds.has(i.productId))
+        .map((i) => {
+            const old = oldItems.find((o) => o.productId === i.productId)!;
+            const diff = i.quantity - old.quantity;
+            return { productId: i.productId, diff, newQty: i.quantity };
+        });
+
+    // make sure stock can fulfill updated order
+    for (const common of commonItems) {
+        if (common.diff > 0) {
+            const inv = await prisma.inventory.findUnique({
+                where: {
+                    productId_shopId: {
+                        productId: common.productId,
+                        shopId: data.shopId,
+                    },
+                },
+                select: { quantity: true },
+            });
+            if (!inv || inv.quantity < common.diff) {
+                throw new AppError(
+                    400,
+                    'Insufficient stock for item quantity increase',
+                    ERROR_CODE.INSUFFICIENT_STOCK,
+                );
+            }
+        }
+    }
+
+    for (const add of addedItems) {
+        const inv = await prisma.inventory.findUnique({
+            where: {
+                productId_shopId: {
+                    productId: add.productId,
+                    shopId: data.shopId,
+                },
+            },
+            select: { quantity: true },
+        });
+        if (!inv || inv.quantity < add.quantity) {
+            throw new AppError(400, 'Insufficient stock for new item', ERROR_CODE.INSUFFICIENT_STOCK);
+        }
+    }
+
+    // calculate total
+    const total = products.reduce((sum, prod) => {
+        const item = newItems.find((i) => i.productId === prod.id);
+        return sum + item!.quantity * prod.unitPrice.toNumber();
     }, 0);
 
-    return await prisma.customerOrder.update({
-        where: {
-            id,
-        },
-        data: {
-            adminId: data.adminId,
-            orderDate: data.orderDate || new Date(),
-            totalAmount: new Decimal(total),
-            items: {
-                deleteMany: {},
-                create: data.items.map((item) => ({
-                    productId: item.productId,
-                    quantity: item.quantity,
-                    unitPrice: products.find((p) => p.id === item.productId)!.unitPrice,
-                })),
+    const updatedOrder = await prisma.$transaction(async (tx) => {
+        const order = await tx.customerOrder.update({
+            where: { id },
+            data: {
+                adminId: data.adminId,
+                orderDate: data.orderDate || new Date(),
+                totalAmount: new Decimal(total),
+                items: {
+                    deleteMany: {},
+                    create: newItems.map((item) => ({
+                        productId: item.productId,
+                        quantity: item.quantity,
+                        unitPrice: products.find((p) => p.id === item.productId)!.unitPrice,
+                    })),
+                },
             },
-        },
-        include: {
-            items: true,
-        },
+            include: { items: true },
+        });
+
+        // return stock for removed
+        for (const rem of removedItems) {
+            await tx.inventory.update({
+                where: {
+                    productId_shopId: {
+                        productId: rem.productId,
+                        shopId: data.shopId,
+                    },
+                },
+                data: {
+                    quantity: { increment: rem.quantity },
+                },
+            });
+        }
+
+        // adjust stock for common
+        for (const common of commonItems) {
+            if (common.diff !== 0) {
+                await tx.inventory.update({
+                    where: {
+                        productId_shopId: {
+                            productId: common.productId,
+                            shopId: data.shopId,
+                        },
+                    },
+                    data: {
+                        quantity:
+                            common.diff > 0
+                                ? { decrement: common.diff }
+                                : { increment: Math.abs(common.diff) },
+                    },
+                });
+            }
+        }
+
+        // deduct stock for new additions
+        for (const add of addedItems) {
+            await tx.inventory.update({
+                where: {
+                    productId_shopId: {
+                        productId: add.productId,
+                        shopId: data.shopId,
+                    },
+                },
+                data: {
+                    quantity: { decrement: add.quantity },
+                },
+            });
+        }
+
+        return order;
     });
+
+    const lowStockProducts = await getLowStock();
+
+    return {
+        updatedOrder,
+        lowStockProducts,
+    };
 }
 
 export async function deleteCustomerOrder(id: CustomerOrderIdInput['id']) {
     const order = await findById(id);
     if (!order) throw new AppError(404, 'Customer order with this ID does not exist', ERROR_CODE.NOT_FOUND);
 
-    await prisma.customerOrder.delete({
-        where: {
-            id,
-        },
+    return prisma.$transaction(async (tx) => {
+        await tx.customerOrder.delete({ where: { id } });
+
+        for (const item of order.items) {
+            await tx.inventory.update({
+                where: {
+                    productId_shopId: {
+                        productId: item.productId,
+                        shopId: order.shopId,
+                    },
+                },
+                data: {
+                    quantity: { increment: item.quantity },
+                },
+            });
+        }
+
+        return true;
     });
-    return true;
 }
