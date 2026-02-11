@@ -16,7 +16,7 @@ import {
 
 const purchaseOrderRouter = Router();
 
-purchaseOrderRouter.post('/add', validate(inBody(CreatePurchaseOrderSchema)), createPurchaseOrderHandler);
+purchaseOrderRouter.post('/', validate(inBody(CreatePurchaseOrderSchema)), createPurchaseOrderHandler);
 purchaseOrderRouter.get('/:id', validate(inParams(PurchaseOrderIdSchema)), getPurchaseOrderByIdHandler);
 purchaseOrderRouter.put(
     '/:id',

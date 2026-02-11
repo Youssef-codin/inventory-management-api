@@ -6,7 +6,7 @@ const BasePurchaseOrderItemSchema = z.object({
     id: z.uuid(),
     purchaseOrderId: z.uuid(),
     productId: z.uuid(),
-    quantity: z.number().int().positive('Quantity must be positive'),
+    quantity: z.number().int().positive('Quantity must be positive').max(1_000_000),
     unitPrice: z.union([
         z.instanceof(Decimal),
         z
@@ -24,6 +24,7 @@ const BasePurchaseOrderSchema = z.object({
         z.instanceof(Decimal),
         z
             .number()
+            .max(100000000)
             .positive('Unit price must be positive')
             .transform((n) => new Decimal(n)),
     ]),

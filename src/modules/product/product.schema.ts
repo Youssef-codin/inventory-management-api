@@ -21,6 +21,7 @@ const BaseProductSchema = z.object({
         z.instanceof(Decimal),
         z
             .number()
+            .max(100000000)
             .positive()
             .transform((n) => new Decimal(n)),
     ]),

@@ -6,11 +6,12 @@ const BaseCustomerOrderItemSchema = z.object({
     id: z.uuid(),
     customerOrderId: z.uuid(),
     productId: z.uuid(),
-    quantity: z.number().int().positive('Quantity must be positive'),
+    quantity: z.number().int().positive('Quantity must be positive').max(1_000_000),
     unitPrice: z.union([
         z.instanceof(Decimal),
         z
             .number()
+            .max(100_000_000)
             .positive('Unit price must be positive')
             .transform((n) => new Decimal(n)),
     ]),
@@ -29,14 +30,14 @@ export const CustomerOrderIdSchema = BaseCustomerOrderSchema.pick({
     id: true,
 });
 
-const itemsInputSchema = BaseCustomerOrderItemSchema.omit({
+const ItemInputSchema = BaseCustomerOrderItemSchema.omit({
     id: true,
     customerOrderId: true,
     unitPrice: true,
 });
 
-const itemsArrayWithUniqueProducts = z
-    .array(itemsInputSchema)
+const ItemsArrayWithUniqueProducts = z
+    .array(ItemInputSchema)
     .min(1, 'Order must contain at least one item')
     .refine(
         (items) => {
@@ -54,7 +55,7 @@ export const CreateCustomerOrderSchema = BaseCustomerOrderSchema.omit({
     items: true,
     totalAmount: true,
 }).extend({
-    items: itemsArrayWithUniqueProducts,
+    items: ItemsArrayWithUniqueProducts,
 });
 
 export const UpdateCustomerOrderSchema = BaseCustomerOrderSchema.omit({
@@ -62,7 +63,7 @@ export const UpdateCustomerOrderSchema = BaseCustomerOrderSchema.omit({
     items: true,
     totalAmount: true,
 }).extend({
-    items: itemsArrayWithUniqueProducts,
+    items: ItemsArrayWithUniqueProducts,
 });
 
 export type CreateCustomerOrderInput = z.infer<typeof CreateCustomerOrderSchema>;

@@ -21,7 +21,7 @@ import {
 
 const productRouter = Router();
 
-productRouter.post('/add', validate(inBody(CreateProductSchema)), createProductHandler);
+productRouter.post('/', validate(inBody(CreateProductSchema)), createProductHandler);
 productRouter.get('/', getAllProductsHandler);
 productRouter.get('/low-stock', getLowStockProductsHandler);
 productRouter.get('/search', validate(inQuery(GetProductByNameSchema)), getProductByNameHandler);

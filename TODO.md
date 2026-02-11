@@ -5,8 +5,10 @@
 - [ ] check bought Items is from the same Shop
 - [ ] check supplied Items is from the same Shop
 - [ ] check GET endpoints probably need new ones
-- [ ] restock items if updated inventory
-- [ ] no duplicate productIds in requests
+- [ ] Cant update customerorder or purchase order after X amount of time
+- [ ] possible n+1 problem?
+- [x] restock items if updated inventory
+- [x] no duplicate productIds in requests
 
 ## Backlog
 

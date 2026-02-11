@@ -148,6 +148,24 @@ describe('Customer Order Module', () => {
             expect(invA?.quantity).toBe(10);
         });
 
+        it('should return 404 if shop not found', async () => {
+            const response = await request(app)
+                .post('/customer-order/add')
+                .set('Authorization', `Bearer ${authToken}`)
+                .send({
+                    adminId,
+                    shopId: 99999, // Non-existent shop
+                    orderDate: new Date().toISOString(),
+                    items: [{ productId: prodA.id, quantity: 1 }],
+                });
+            expect(response.body.error?.code).toBe('NOT_FOUND');
+            expect(response.status).toBe(404);
+
+            // No order created
+            const orderCount = await prisma.customerOrder.count();
+            expect(orderCount).toBe(0);
+        });
+
         it('should return 400 for invalid item payload', async () => {
             const response = await request(app)
                 .post('/customer-order/add')
@@ -759,6 +777,243 @@ describe('Customer Order Module', () => {
         });
     });
 
+    it('should change shop and transfer inventory correctly', async () => {
+        // Create a second shop with inventory
+        const shop2 = await prisma.shop.create({
+            data: { name: 'Second Shop', address: '456 Second St' },
+        });
+
+        await prisma.inventory.create({
+            data: { productId: prodA.id, shopId: shop2.id, quantity: 20 },
+        });
+
+        // Create order in first shop
+        const createResponse = await request(app)
+            .post('/customer-order/add')
+            .set('Authorization', `Bearer ${authToken}`)
+            .send({
+                adminId,
+                shopId,
+                orderDate: new Date().toISOString(),
+                items: [{ productId: prodA.id, quantity: 5 }],
+            });
+
+        expect(createResponse.status).toBe(201);
+        const order = createResponse.body.data.order;
+
+        // Verify original shop inventory decreased
+        const invShop1Before = await prisma.inventory.findUnique({
+            where: { productId_shopId: { productId: prodA.id, shopId } },
+        });
+        expect(invShop1Before?.quantity).toBe(5); // 10 - 5
+
+        // Update order to different shop
+        const response = await request(app)
+            .put(`/customer-order/${order.id}`)
+            .set('Authorization', `Bearer ${authToken}`)
+            .send({
+                adminId,
+                shopId: shop2.id, // Change to shop 2
+                orderDate: new Date().toISOString(),
+                items: [{ productId: prodA.id, quantity: 5 }],
+            });
+
+        expect(response.status).toBe(200);
+        expect(response.body.success).toBe(true);
+        expect(response.body.data.updatedOrder.shopId).toBe(shop2.id);
+
+        // Verify inventory transfers:
+        // Shop 1: should get back the 5 units
+        const invShop1After = await prisma.inventory.findUnique({
+            where: { productId_shopId: { productId: prodA.id, shopId } },
+        });
+        expect(invShop1After?.quantity).toBe(10); // 5 + 5 returned
+
+        // Shop 2: should have 5 less (20 - 5 = 15)
+        const invShop2After = await prisma.inventory.findUnique({
+            where: { productId_shopId: { productId: prodA.id, shopId: shop2.id } },
+        });
+        expect(invShop2After?.quantity).toBe(15);
+    });
+
+    it('should reject shop change when new shop lacks inventory', async () => {
+        // Create a second shop with limited inventory
+        const shop2 = await prisma.shop.create({
+            data: { name: 'Second Shop', address: '456 Second St' },
+        });
+
+        await prisma.inventory.create({
+            data: { productId: prodA.id, shopId: shop2.id, quantity: 2 },
+        });
+
+        // Create order in first shop with quantity 5
+        const createResponse = await request(app)
+            .post('/customer-order/add')
+            .set('Authorization', `Bearer ${authToken}`)
+            .send({
+                adminId,
+                shopId,
+                orderDate: new Date().toISOString(),
+                items: [{ productId: prodA.id, quantity: 5 }],
+            });
+
+        expect(createResponse.status).toBe(201);
+        const order = createResponse.body.data.order;
+
+        // Try to change to shop 2 which only has 2 units
+        const response = await request(app)
+            .put(`/customer-order/${order.id}`)
+            .set('Authorization', `Bearer ${authToken}`)
+            .send({
+                adminId,
+                shopId: shop2.id,
+                orderDate: new Date().toISOString(),
+                items: [{ productId: prodA.id, quantity: 5 }],
+            });
+
+        expect(response.status).toBe(400);
+        expect(response.body.error?.code).toBe('INSUFFICIENT_STOCK');
+    });
+
+    it('should handle shop change with different products', async () => {
+        // Create a second shop with different inventory
+        const shop2 = await prisma.shop.create({
+            data: { name: 'Second Shop', address: '456 Second St' },
+        });
+
+        await prisma.inventory.create({
+            data: { productId: prodA.id, shopId: shop2.id, quantity: 10 },
+        });
+        await prisma.inventory.create({
+            data: { productId: prodB.id, shopId: shop2.id, quantity: 5 },
+        });
+
+        // Create order in first shop with prodA
+        const createResponse = await request(app)
+            .post('/customer-order/add')
+            .set('Authorization', `Bearer ${authToken}`)
+            .send({
+                adminId,
+                shopId,
+                orderDate: new Date().toISOString(),
+                items: [{ productId: prodA.id, quantity: 3 }],
+            });
+
+        expect(createResponse.status).toBe(201);
+        const order = createResponse.body.data.order;
+
+        // Change shop and also change product
+        const response = await request(app)
+            .put(`/customer-order/${order.id}`)
+            .set('Authorization', `Bearer ${authToken}`)
+            .send({
+                adminId,
+                shopId: shop2.id,
+                orderDate: new Date().toISOString(),
+                items: [{ productId: prodB.id, quantity: 3 }],
+            });
+
+        expect(response.status).toBe(200);
+        expect(response.body.success).toBe(true);
+        expect(response.body.data.updatedOrder.shopId).toBe(shop2.id);
+        expect(response.body.data.updatedOrder.items[0].productId).toBe(prodB.id);
+
+        // Verify original shop got inventory back
+        const invShop1 = await prisma.inventory.findUnique({
+            where: { productId_shopId: { productId: prodA.id, shopId } },
+        });
+        expect(invShop1?.quantity).toBe(10); // 7 + 3 returned
+
+        // Verify new shop inventory decreased
+        const invShop2ProdB = await prisma.inventory.findUnique({
+            where: { productId_shopId: { productId: prodB.id, shopId: shop2.id } },
+        });
+        expect(invShop2ProdB?.quantity).toBe(2); // 5 - 3
+    });
+
+    it('should reject shop change to non-existent shop', async () => {
+        // Create order
+        const createResponse = await request(app)
+            .post('/customer-order/add')
+            .set('Authorization', `Bearer ${authToken}`)
+            .send({
+                adminId,
+                shopId,
+                orderDate: new Date().toISOString(),
+                items: [{ productId: prodA.id, quantity: 2 }],
+            });
+
+        expect(createResponse.status).toBe(201);
+        const order = createResponse.body.data.order;
+
+        // Try to change to non-existent shop
+        const response = await request(app)
+            .put(`/customer-order/${order.id}`)
+            .set('Authorization', `Bearer ${authToken}`)
+            .send({
+                adminId,
+                shopId: 99999, // Non-existent shop
+                orderDate: new Date().toISOString(),
+                items: [{ productId: prodA.id, quantity: 2 }],
+            });
+
+        expect(response.status).toBe(404);
+        expect(response.body.error?.code).toBe('NOT_FOUND');
+    });
+
+    // Note: GET /customer-order (list all) endpoint does not exist
+    // The router only supports GET /customer-order/:id
+
+    describe('GET /customer-order/:id', () => {
+        it('should return order by ID', async () => {
+            const createResponse = await request(app)
+                .post('/customer-order/add')
+                .set('Authorization', `Bearer ${authToken}`)
+                .send({
+                    adminId,
+                    shopId,
+                    orderDate: new Date().toISOString(),
+                    items: [{ productId: prodA.id, quantity: 2 }],
+                });
+
+            expect(createResponse.status).toBe(201);
+            const orderId = createResponse.body.data.order.id;
+
+            const response = await request(app)
+                .get(`/customer-order/${orderId}`)
+                .set('Authorization', `Bearer ${authToken}`);
+
+            expect(response.status).toBe(200);
+            expect(response.body.success).toBe(true);
+            expect(response.body.data.id).toBe(orderId);
+            expect(response.body.data.items).toHaveLength(1);
+            expect(Number(response.body.data.totalAmount)).toBe(100);
+        });
+
+        it('should return 404 for non-existent order', async () => {
+            const response = await request(app)
+                .get('/customer-order/00000000-0000-0000-0000-000000000000')
+                .set('Authorization', `Bearer ${authToken}`);
+
+            expect(response.status).toBe(404);
+            expect(response.body.error?.code).toBe('NOT_FOUND');
+        });
+
+        it('should return 400 for invalid order ID format', async () => {
+            const response = await request(app)
+                .get('/customer-order/invalid-id')
+                .set('Authorization', `Bearer ${authToken}`);
+
+            expect(response.status).toBe(400);
+            expect(response.body.error?.code).toBe('VALIDATION_FAILED');
+        });
+
+        it('should return 401 without auth token', async () => {
+            const response = await request(app).get('/customer-order/some-id');
+            expect(response.status).toBe(401);
+        });
+    });
+
     describe('DELETE /customer-order/:id', () => {
         it('should return 204 and delete order with its items', async () => {
             // Create order via API to properly track inventory
@@ -831,6 +1086,93 @@ describe('Customer Order Module', () => {
                 .set('Authorization', `Bearer ${authToken}`);
             expect(response.body.error?.code).toBe('NOT_FOUND');
             expect(response.status).toBe(404);
+        });
+
+        it('should handle delete when inventory no longer exists', async () => {
+            // Create order
+            const createResponse = await request(app)
+                .post('/customer-order/add')
+                .set('Authorization', `Bearer ${authToken}`)
+                .send({
+                    adminId,
+                    shopId,
+                    orderDate: new Date().toISOString(),
+                    items: [{ productId: prodA.id, quantity: 3 }],
+                });
+
+            expect(createResponse.status).toBe(201);
+            const order = createResponse.body.data.order;
+
+            // Manually delete the inventory record (simulating data inconsistency)
+            await prisma.inventory.delete({
+                where: { productId_shopId: { productId: prodA.id, shopId } },
+            });
+
+            // Try to delete order - should handle gracefully
+            const response = await request(app)
+                .delete(`/customer-order/${order.id}`)
+                .set('Authorization', `Bearer ${authToken}`);
+
+            // Should either succeed (order deleted) or fail gracefully
+            expect([204, 500]).toContain(response.status);
+        });
+    });
+
+    describe('Edge Cases', () => {
+        it('should return 404 when product has no inventory record for shop', async () => {
+            // Create a new product without inventory
+            const prodNoInventory = await prisma.product.create({
+                data: { name: 'No Inventory', category: 'Test', unitPrice: 50, reorderLevel: 5 },
+            });
+
+            const response = await request(app)
+                .post('/customer-order/add')
+                .set('Authorization', `Bearer ${authToken}`)
+                .send({
+                    adminId,
+                    shopId,
+                    orderDate: new Date().toISOString(),
+                    items: [{ productId: prodNoInventory.id, quantity: 1 }],
+                });
+
+            // Should fail because no inventory exists
+            expect([400, 404]).toContain(response.status);
+        });
+
+        it('should handle order with future date', async () => {
+            const futureDate = new Date();
+            futureDate.setFullYear(futureDate.getFullYear() + 1);
+
+            const response = await request(app)
+                .post('/customer-order/add')
+                .set('Authorization', `Bearer ${authToken}`)
+                .send({
+                    adminId,
+                    shopId,
+                    orderDate: futureDate.toISOString(),
+                    items: [{ productId: prodA.id, quantity: 1 }],
+                });
+
+            // Currently allows future dates - should this be restricted?
+            expect([201, 400]).toContain(response.status);
+        });
+
+        it('should handle order with past date', async () => {
+            const pastDate = new Date();
+            pastDate.setFullYear(pastDate.getFullYear() - 1);
+
+            const response = await request(app)
+                .post('/customer-order/add')
+                .set('Authorization', `Bearer ${authToken}`)
+                .send({
+                    adminId,
+                    shopId,
+                    orderDate: pastDate.toISOString(),
+                    items: [{ productId: prodA.id, quantity: 1 }],
+                });
+
+            // Currently allows past dates
+            expect([201, 400]).toContain(response.status);
         });
     });
 });

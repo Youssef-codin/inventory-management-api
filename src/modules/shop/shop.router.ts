@@ -12,7 +12,7 @@ import { CreateShopSchema, ShopIdSchema, UpdateShopSchema } from './shop.schema'
 
 const shopRouter = Router();
 shopRouter.get('/', getAllShopsHandler);
-shopRouter.post('/add', validate(inBody(CreateShopSchema)), createShopHandler);
+shopRouter.post('/', validate(inBody(CreateShopSchema)), createShopHandler);
 shopRouter.get('/:id', validate(inParams(ShopIdSchema)), getShopByIdHandler);
 shopRouter.put(
     '/:id',

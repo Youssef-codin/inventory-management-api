@@ -19,7 +19,7 @@ import {
 const supplierRouter = Router();
 
 supplierRouter.get('/', getAllSuppliersHandler);
-supplierRouter.post('/add', validate(inBody(CreateSupplierSchema)), createSupplierHandler);
+supplierRouter.post('/', validate(inBody(CreateSupplierSchema)), createSupplierHandler);
 supplierRouter.get(
     '/product/:productId',
     validate(inParams(GetSupplierByProductIdSchema)),

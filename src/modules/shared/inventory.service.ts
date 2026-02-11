@@ -1,3 +1,5 @@
+import type { PrismaClient } from '@prisma/client/extension';
+import type { TransactionClient } from '../../../generated/prisma/internal/prismaNamespace';
 import { prisma } from '../../util/prisma';
 
 export async function getLowStock() {
@@ -14,4 +16,54 @@ export async function getLowStock() {
         WHERE i."quantity" <= p."reorderLevel";
     `;
     return result;
+}
+
+export async function incrementInventory(
+    ctx: TransactionClient | PrismaClient,
+    item: { productId: string; quantity: number },
+    shopId: number,
+) {
+    await ctx.inventory.update({
+        where: {
+            productId_shopId: {
+                productId: item.productId,
+                shopId,
+            },
+        },
+        data: {
+            quantity: { increment: item.quantity },
+        },
+    });
+}
+
+export async function decrementInventory(
+    ctx: TransactionClient | PrismaClient,
+    item: { productId: string; quantity: number },
+    shopId: number,
+) {
+    await ctx.inventory.update({
+        where: {
+            productId_shopId: {
+                productId: item.productId,
+                shopId,
+            },
+        },
+        data: {
+            quantity: { decrement: item.quantity },
+        },
+    });
+}
+
+export async function getQuantity(productId: string, shopId: number) {
+    return await prisma.inventory.findUnique({
+        where: {
+            productId_shopId: {
+                productId,
+                shopId,
+            },
+        },
+        select: {
+            quantity: true,
+        },
+    });
 }
