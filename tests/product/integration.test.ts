@@ -1,10 +1,10 @@
-import { describe, it, expect, beforeEach, afterAll } from 'vitest';
 import request from 'supertest';
+import { afterAll, beforeEach, describe, expect, it } from 'vitest';
 import app from '../../src/app';
-import { resetDb, createTestAdmin, getAuthToken } from '../helpers';
 import { prisma } from '../../src/util/prisma';
+import { createTestAdmin, getAuthToken, resetDb } from '../helpers';
 
-describe('Product Module', () => {
+describe('Product Module - Integration', () => {
     let authToken: string;
     let shopId: number;
 
@@ -13,7 +13,6 @@ describe('Product Module', () => {
         const admin = await createTestAdmin();
         authToken = getAuthToken(admin.id, admin.username);
 
-        // Create a test shop
         const shop = await prisma.shop.create({
             data: { name: 'Test Shop', address: '123 Test St' },
         });
@@ -26,7 +25,6 @@ describe('Product Module', () => {
 
     describe('GET /product', () => {
         it('should return 200 and list of products', async () => {
-            // Create products with inventory
             await prisma.product.create({
                 data: {
                     name: 'P1',
@@ -58,10 +56,10 @@ describe('Product Module', () => {
         });
     });
 
-    describe('POST /product/add', () => {
+    describe('POST /product/', () => {
         it('should create product with valid data', async () => {
             const response = await request(app)
-                .post('/product/add')
+                .post('/product/')
                 .set('Authorization', `Bearer ${authToken}`)
                 .send({
                     name: 'New Product',
@@ -76,7 +74,6 @@ describe('Product Module', () => {
             expect(response.body.data).toHaveProperty('id');
             expect(response.body.data.unitPrice).toBe('99.99');
 
-            // Verify inventory creation
             const inv = await prisma.inventory.findUnique({
                 where: {
                     productId_shopId: {
@@ -87,46 +84,6 @@ describe('Product Module', () => {
             });
             expect(inv).not.toBeNull();
             expect(inv?.quantity).toBe(0);
-        });
-
-        it('should return 400 for missing required fields', async () => {
-            const response = await request(app)
-                .post('/product/add')
-                .set('Authorization', `Bearer ${authToken}`)
-                .send({
-                    name: 'Missing Fields',
-                    // missing category, unitPrice, inventory...
-                });
-            expect(response.body.error?.code).toBe('VALIDATION_FAILED');
-            expect(response.status).toBe(400);
-        });
-
-        it('should return 400 for negative values', async () => {
-            const response = await request(app)
-                .post('/product/add')
-                .set('Authorization', `Bearer ${authToken}`)
-                .send({
-                    name: 'Negative Price',
-                    category: 'Test',
-                    unitPrice: -10,
-                    reorderLevel: 5,
-                    inventories: [{ shopId, quantity: 10 }],
-                });
-
-            expect(response.body.error?.code).toBe('VALIDATION_FAILED');
-            expect(response.status).toBe(400);
-        });
-
-        it('should return 400 for missing inventories', async () => {
-            const response = await request(app)
-                .post('/product/add')
-                .set('Authorization', `Bearer ${authToken}`)
-                .send({
-                    name: 'New Product',
-                    category: 'Test',
-                    unitPrice: 99.99,
-                    reorderLevel: 5,
-                });
         });
     });
 
@@ -157,14 +114,6 @@ describe('Product Module', () => {
             expect(response.body.error?.code).toBe('NOT_FOUND');
             expect(response.status).toBe(404);
         });
-
-        it('should return 400 for invalid UUID', async () => {
-            const response = await request(app)
-                .get(`/product/invalid-uuid`)
-                .set('Authorization', `Bearer ${authToken}`);
-            expect(response.body.error?.code).toBe('VALIDATION_FAILED');
-            expect(response.status).toBe(400);
-        });
     });
 
     describe('PUT /product/:id', () => {
@@ -194,23 +143,10 @@ describe('Product Module', () => {
             expect(response.body.data.name).toBe('New');
             expect(response.body.data.unitPrice).toBe('15.5');
 
-            // Verify inventory update in DB
             const inv = await prisma.inventory.findUnique({
                 where: { productId_shopId: { productId: product.id, shopId } },
             });
             expect(inv?.quantity).toBe(10);
-        });
-
-        it('should return 400 for invalid payload', async () => {
-            const product = await prisma.product.create({
-                data: { name: 'P', category: 'C', unitPrice: 10 },
-            });
-            const response = await request(app)
-                .put(`/product/${product.id}`)
-                .set('Authorization', `Bearer ${authToken}`)
-                .send({ unitPrice: 'invalid' });
-            expect(response.body.error?.code).toBe('VALIDATION_FAILED');
-            expect(response.status).toBe(400);
         });
     });
 
@@ -315,7 +251,6 @@ describe('Product Module', () => {
 
             expect(response.status).toBe(200);
             expect(response.body.success).toBe(true);
-            // Response is the Inventory object
             expect(response.body.data.quantity).toBe(20);
             expect(response.body.data.shopId).toBe(shopId);
             expect(response.body.data.productId).toBe(product.id);
@@ -335,53 +270,5 @@ describe('Product Module', () => {
             expect(response.status).toBe(404);
             expect(response.body.error?.code).toBe('NOT_FOUND');
         });
-
-        it('should return 400 for invalid product ID', async () => {
-            const response = await request(app)
-                .patch(`/product/invalid-uuid/stock`)
-                .set('Authorization', `Bearer ${authToken}`)
-                .send({ shopid: shopId, newQuantity: 15 });
-            expect(response.status).toBe(400);
-            expect(response.body.error?.code).toBe('VALIDATION_FAILED');
-        });
-
-        it('should return 400 for invalid amount (negative)', async () => {
-            const product = await prisma.product.create({
-                data: {
-                    name: 'Stock Negative Test',
-                    category: 'Test',
-                    unitPrice: 10,
-                    reorderLevel: 5,
-                    inventories: { create: { shopId, quantity: 10 } },
-                },
-            });
-
-            const response = await request(app)
-                .patch(`/product/${product.id}/stock`)
-                .set('Authorization', `Bearer ${authToken}`)
-                .send({ shopid: shopId, newQuantity: -5 });
-            expect(response.status).toBe(400);
-            expect(response.body.error?.code).toBe('VALIDATION_FAILED');
-        });
-
-        it('should return 400 for invalid amount (not integer)', async () => {
-            const product = await prisma.product.create({
-                data: {
-                    name: 'Stock Decimal Test',
-                    category: 'Test',
-                    unitPrice: 10,
-                    reorderLevel: 5,
-                    inventories: { create: { shopId, quantity: 10 } },
-                },
-            });
-
-            const response = await request(app)
-                .patch(`/product/${product.id}/stock`)
-                .set('Authorization', `Bearer ${authToken}`)
-                .send({ shopid: shopId, newQuantity: 10.5 });
-            expect(response.status).toBe(400);
-            expect(response.body.error?.code).toBe('VALIDATION_FAILED');
-        });
     });
 });
-

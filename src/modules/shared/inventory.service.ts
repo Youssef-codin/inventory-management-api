@@ -20,7 +20,7 @@ export async function getLowStock() {
 
 export async function incrementInventory(
     ctx: TransactionClient | PrismaClient,
-    item: { productId: string; quantity: number },
+    item: { productId: string; incrementBy: number },
     shopId: number,
 ) {
     await ctx.inventory.update({
@@ -31,14 +31,14 @@ export async function incrementInventory(
             },
         },
         data: {
-            quantity: { increment: item.quantity },
+            quantity: { increment: item.incrementBy },
         },
     });
 }
 
 export async function decrementInventory(
     ctx: TransactionClient | PrismaClient,
-    item: { productId: string; quantity: number },
+    item: { productId: string; decrementBy: number },
     shopId: number,
 ) {
     await ctx.inventory.update({
@@ -49,13 +49,13 @@ export async function decrementInventory(
             },
         },
         data: {
-            quantity: { decrement: item.quantity },
+            quantity: { decrement: item.decrementBy },
         },
     });
 }
 
-export async function getQuantity(productId: string, shopId: number) {
-    return await prisma.inventory.findUnique({
+export async function getQuantity(ctx: TransactionClient | PrismaClient, productId: string, shopId: number) {
+    return await ctx.inventory.findUnique({
         where: {
             productId_shopId: {
                 productId,

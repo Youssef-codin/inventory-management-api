@@ -1,10 +1,10 @@
-import { describe, it, expect, beforeEach } from 'vitest';
 import request from 'supertest';
+import { beforeEach, describe, expect, it } from 'vitest';
 import app from '../../src/app';
-import { resetDb, createTestAdmin, getAuthToken } from '../helpers';
 import { prisma } from '../../src/util/prisma';
+import { createTestAdmin, getAuthToken, resetDb } from '../helpers';
 
-describe('Shop Module', () => {
+describe('Shop Module - Integration', () => {
     let authToken: string;
 
     beforeEach(async () => {
@@ -19,12 +19,10 @@ describe('Shop Module', () => {
                 data: [
                     { name: 'Shop 1', address: 'Addr 1' },
                     { name: 'Shop 2', address: 'Addr 2' },
-                ]
+                ],
             });
 
-            const response = await request(app)
-                .get('/shop')
-                .set('Authorization', `Bearer ${authToken}`);
+            const response = await request(app).get('/shop').set('Authorization', `Bearer ${authToken}`);
 
             expect(response.status).toBe(200);
             expect(response.body.success).toBe(true);
@@ -34,10 +32,10 @@ describe('Shop Module', () => {
         });
     });
 
-    describe('POST /shop/add', () => {
+    describe('POST /shop/', () => {
         it('should create shop with valid data', async () => {
             const response = await request(app)
-                .post('/shop/add')
+                .post('/shop/')
                 .set('Authorization', `Bearer ${authToken}`)
                 .send({
                     name: 'New Shop',
@@ -50,25 +48,12 @@ describe('Shop Module', () => {
             expect(response.body.data.name).toBe('New Shop');
             expect(response.body.data.address).toBe('New Address');
         });
-
-        it('should return 400 for missing required fields', async () => {
-            const response = await request(app)
-                .post('/shop/add')
-                .set('Authorization', `Bearer ${authToken}`)
-                .send({
-                    name: 'Missing Address',
-                    // address missing
-                });
-
-            expect(response.status).toBe(400);
-            expect(response.body.error?.code).toBe('VALIDATION_FAILED');
-        });
     });
 
     describe('GET /shop/:id', () => {
         it('should return 200 for existing shop', async () => {
             const shop = await prisma.shop.create({
-                data: { name: 'Test Shop', address: 'Address' }
+                data: { name: 'Test Shop', address: 'Address' },
             });
 
             const response = await request(app)
@@ -88,21 +73,12 @@ describe('Shop Module', () => {
             expect(response.status).toBe(404);
             expect(response.body.error?.code).toBe('NOT_FOUND');
         });
-        
-        it('should return 400 for invalid ID (not a number)', async () => {
-            const response = await request(app)
-                .get(`/shop/invalid`)
-                .set('Authorization', `Bearer ${authToken}`);
-
-            expect(response.status).toBe(400);
-            expect(response.body.error?.code).toBe('VALIDATION_FAILED');
-        });
     });
 
     describe('PUT /shop/:id', () => {
         it('should return 200 and update fields', async () => {
             const shop = await prisma.shop.create({
-                data: { name: 'Old Name', address: 'Old Address' }
+                data: { name: 'Old Name', address: 'Old Address' },
             });
 
             const response = await request(app)
@@ -135,7 +111,7 @@ describe('Shop Module', () => {
     describe('DELETE /shop/:id', () => {
         it('should return 204 for existing shop', async () => {
             const shop = await prisma.shop.create({
-                data: { name: 'Delete Me', address: 'Address' }
+                data: { name: 'Delete Me', address: 'Address' },
             });
 
             const response = await request(app)

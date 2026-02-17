@@ -69,3 +69,4 @@ export const UpdateCustomerOrderSchema = BaseCustomerOrderSchema.omit({
 export type CreateCustomerOrderInput = z.infer<typeof CreateCustomerOrderSchema>;
 export type CustomerOrderIdInput = z.infer<typeof CustomerOrderIdSchema>;
 export type UpdateCustomerOrderInput = z.infer<typeof UpdateCustomerOrderSchema>;
+export type BaseCustomerOrder = z.infer<typeof BaseCustomerOrderSchema>;
