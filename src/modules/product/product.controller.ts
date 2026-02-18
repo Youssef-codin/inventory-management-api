@@ -13,7 +13,7 @@ import {
     getAllProducts,
     getLowStockProducts,
     getProductById,
-    getProductByName,
+    getProductsByName,
     patchProductStock,
     updateProduct,
 } from './product.service';
@@ -46,7 +46,7 @@ export async function getProductByNameHandler(
 ) {
     const getName = req.query.name;
 
-    const product = await getProductByName(getName);
+    const product = await getProductsByName(getName);
     return respond(res, 200, ok(product));
 }
 

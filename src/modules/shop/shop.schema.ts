@@ -4,21 +4,15 @@ import type { Shop } from '../../../generated/prisma/client';
 const BaseShopSchema = z.object({
     id: z.number().positive().int(),
     name: z.string(),
-    address: z.string(),
+    address: z.string().nullable(),
 }) satisfies z.ZodType<Shop>;
 
 export const CreateShopSchema = BaseShopSchema.omit({
     id: true,
 });
 
-export const ShopIdSchema = BaseShopSchema.pick({
-    id: true,
-}).extend({
-    id: z.coerce
-        .number()
-        .positive()
-        .int()
-        .transform((n) => String(n)),
+export const ShopIdSchema = z.object({
+    id: z.coerce.number().positive().int(),
 });
 
 export const UpdateShopSchema = BaseShopSchema.omit({

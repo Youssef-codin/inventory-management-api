@@ -26,7 +26,7 @@ export const UpdateAdminSchema = BaseAdminSchema.omit({
     id: true,
     passwordHash: true,
 }).extend({
-    password: z.string().min(6),
+    password: z.string().min(6).optional(),
 });
 
 export type AdminIdInput = z.infer<typeof AdminIdSchema>;

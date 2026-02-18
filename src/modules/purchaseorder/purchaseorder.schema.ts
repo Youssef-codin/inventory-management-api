@@ -25,7 +25,7 @@ const BasePurchaseOrderSchema = z.object({
         z
             .number()
             .max(100000000)
-            .positive('Unit price must be positive')
+            .positive('Total amount must be positive')
             .transform((n) => new Decimal(n)),
     ]),
     arrived: z.boolean().default(false),
@@ -34,17 +34,32 @@ const BasePurchaseOrderSchema = z.object({
     items: z.array(BasePurchaseOrderItemSchema).min(1),
 }) satisfies z.ZodType<PurchaseOrder>;
 
-const itemsInputSchema = BasePurchaseOrderItemSchema.omit({
-    id: true,
-    purchaseOrderId: true,
+const itemsInputSchema = z.object({
+    productId: z.uuid(),
+    quantity: z.number().int().positive('Quantity must be positive').max(1_000_000),
+    unitPrice: z.number().positive('Unit price must be positive'),
 });
+
+const ItemsArrayWithUniqueProducts = z
+    .array(itemsInputSchema)
+    .min(1, 'Order must contain at least one item')
+    .refine(
+        (items) => {
+            const productIds = items.map((i) => i.productId);
+            return new Set(productIds).size === productIds.length;
+        },
+        {
+            message: 'Duplicate productId found in items',
+            path: ['items'],
+        },
+    );
 
 export const CreatePurchaseOrderSchema = BasePurchaseOrderSchema.omit({
     id: true,
     items: true,
     totalAmount: true,
 }).extend({
-    items: z.array(itemsInputSchema).min(1),
+    items: ItemsArrayWithUniqueProducts,
 });
 
 export const PurchaseOrderIdSchema = BasePurchaseOrderSchema.pick({ id: true });
@@ -54,7 +69,7 @@ export const UpdatePurchaseOrderSchema = BasePurchaseOrderSchema.omit({
     items: true,
     totalAmount: true,
 }).extend({
-    items: z.array(itemsInputSchema).min(1),
+    items: ItemsArrayWithUniqueProducts,
 });
 
 export type CreatePurchaseOrderInput = z.infer<typeof CreatePurchaseOrderSchema>;

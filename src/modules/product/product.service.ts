@@ -2,13 +2,13 @@ import { includes } from 'zod';
 import { AppError } from '../../errors/AppError';
 import { ERROR_CODE } from '../../middleware/errorHandler';
 import { prisma } from '../../util/prisma';
+import { getLowStock } from '../shared/inventory.service';
 import type {
     CreateProductInput,
     PatchStockInput,
     ProductIdInput,
     UpdateProductInput,
 } from './product.schema';
-import { getLowStock } from '../shared/inventory.service';
 
 async function findProductById(id: ProductIdInput['id']) {
     return await prisma.product.findUnique({
@@ -36,7 +36,7 @@ export async function getLowStockProducts() {
     return await getLowStock();
 }
 
-export async function getProductByName(search: string) {
+export async function getProductsByName(search: string) {
     return await prisma.product.findMany({
         where: {
             name: {

@@ -21,7 +21,7 @@ const BaseCustomerOrderSchema = z.object({
     id: z.uuid(),
     orderDate: z.coerce.date(),
     totalAmount: z.union([z.instanceof(Decimal), z.number().transform((n) => new Decimal(n))]),
-    adminId: z.uuid(),
+    adminId: z.uuid().nullable(),
     shopId: z.number().int().positive(),
     items: z.array(BaseCustomerOrderItemSchema).min(1),
 }) satisfies z.ZodType<CustomerOrder>;
@@ -33,7 +33,6 @@ export const CustomerOrderIdSchema = BaseCustomerOrderSchema.pick({
 const ItemInputSchema = BaseCustomerOrderItemSchema.omit({
     id: true,
     customerOrderId: true,
-    unitPrice: true,
 });
 
 const ItemsArrayWithUniqueProducts = z
@@ -55,6 +54,7 @@ export const CreateCustomerOrderSchema = BaseCustomerOrderSchema.omit({
     items: true,
     totalAmount: true,
 }).extend({
+    adminId: z.uuid(),
     items: ItemsArrayWithUniqueProducts,
 });
 
@@ -63,6 +63,7 @@ export const UpdateCustomerOrderSchema = BaseCustomerOrderSchema.omit({
     items: true,
     totalAmount: true,
 }).extend({
+    adminId: z.uuid(),
     items: ItemsArrayWithUniqueProducts,
 });
 

@@ -50,14 +50,14 @@ model PurchaseOrder {
   orderDate   DateTime @default(now())
   totalAmount Decimal  @db.Decimal(10, 2)
   arrived     Boolean  @default(false)
-  adminId     String   @db.Uuid()
-  supplierId  String   @db.Uuid()
+  adminId     String?  @db.Uuid()
+  supplierId  String?  @db.Uuid()
   shopId      Int
 
   items    PurchaseOrderItem[]
   shop     Shop                @relation(fields: [shopId], references: [id])
-  admin    Admin               @relation(fields: [adminId], references: [id])
-  supplier Supplier            @relation(fields: [supplierId], references: [id], onDelete: Cascade)
+  admin    Admin?              @relation(fields: [adminId], references: [id], onDelete: SetNull)
+  supplier Supplier?           @relation(fields: [supplierId], references: [id], onDelete: SetNull)
 }
 
 model PurchaseOrderItem {
@@ -75,12 +75,12 @@ model CustomerOrder {
   id          String              @id @default(uuid()) @db.Uuid()
   orderDate   DateTime            @default(now())
   totalAmount Decimal             @db.Decimal(10, 2)
-  adminId     String              @db.Uuid()
+  adminId     String?             @db.Uuid()
   shopId      Int
   items       CustomerOrderItem[]
 
-  shop  Shop  @relation(fields: [shopId], references: [id])
-  admin Admin @relation(fields: [adminId], references: [id])
+  shop  Shop   @relation(fields: [shopId], references: [id])
+  admin Admin? @relation(fields: [adminId], references: [id], onDelete: SetNull)
 }
 
 model CustomerOrderItem {

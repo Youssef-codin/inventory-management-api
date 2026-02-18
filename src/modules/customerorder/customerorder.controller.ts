@@ -1,6 +1,4 @@
 import type { Request, Response } from 'express';
-import { AppError } from '../../errors/AppError';
-import { ERROR_CODE } from '../../middleware/errorHandler';
 import { ok, respond } from '../../util/apiresponse';
 import type {
     CreateCustomerOrderInput,
@@ -38,13 +36,6 @@ export async function updateCustomerOrderHandler(
     res: Response,
 ) {
     const reqAdminId = res.locals.id;
-    if (reqAdminId !== req.body.adminId)
-        throw new AppError(
-            403,
-            'Unauthorized: cannot create customer order for another admin.',
-            ERROR_CODE.UNAUTHORIZED,
-        );
-
     const customerOrderInput = req.body;
     const id = req.params.id;
 

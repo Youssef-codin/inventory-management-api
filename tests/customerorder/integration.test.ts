@@ -46,7 +46,7 @@ describe('Customer Order Module - Integration', () => {
                     adminId,
                     shopId,
                     orderDate: new Date().toISOString(),
-                    items: [{ productId: prodA.id, quantity: 2 }],
+                    items: [{ productId: prodA.id, quantity: 2, unitPrice: 50 }],
                 });
 
             expect(response.status).toBe(201);
@@ -73,8 +73,8 @@ describe('Customer Order Module - Integration', () => {
                     shopId,
                     orderDate: new Date().toISOString(),
                     items: [
-                        { productId: prodA.id, quantity: 2 },
-                        { productId: prodB.id, quantity: 1 },
+                        { productId: prodA.id, quantity: 2, unitPrice: 50 },
+                        { productId: prodB.id, quantity: 1, unitPrice: 100 },
                     ],
                 });
 
@@ -101,7 +101,7 @@ describe('Customer Order Module - Integration', () => {
                     adminId,
                     shopId,
                     orderDate: new Date().toISOString(),
-                    items: [{ productId: prodB.id, quantity: 2 }],
+                    items: [{ productId: prodB.id, quantity: 2, unitPrice: 50 }],
                 });
 
             expect(response.body.error?.code).toBe('INSUFFICIENT_STOCK');
@@ -123,7 +123,9 @@ describe('Customer Order Module - Integration', () => {
                     adminId,
                     shopId,
                     orderDate: new Date().toISOString(),
-                    items: [{ productId: '00000000-0000-0000-0000-000000000000', quantity: 1 }],
+                    items: [
+                        { productId: '00000000-0000-0000-0000-000000000000', quantity: 1, unitPrice: 50 },
+                    ],
                 });
             expect(response.body.error?.code).toBe('NOT_FOUND');
             expect(response.status).toBe(404);
@@ -142,7 +144,7 @@ describe('Customer Order Module - Integration', () => {
                     adminId,
                     shopId: 99999,
                     orderDate: new Date().toISOString(),
-                    items: [{ productId: prodA.id, quantity: 1 }],
+                    items: [{ productId: prodA.id, quantity: 1, unitPrice: 50 }],
                 });
             expect(response.body.error?.code).toBe('NOT_FOUND');
             expect(response.status).toBe(404);
@@ -159,7 +161,7 @@ describe('Customer Order Module - Integration', () => {
                     adminId,
                     shopId,
                     orderDate: new Date().toISOString(),
-                    items: [{ productId: prodA.id, quantity: 8 }],
+                    items: [{ productId: prodA.id, quantity: 8, unitPrice: 50 }],
                 });
 
             expect(response.status).toBe(201);
@@ -179,7 +181,7 @@ describe('Customer Order Module - Integration', () => {
                     adminId,
                     shopId,
                     orderDate: new Date().toISOString(),
-                    items: [{ productId: prodA.id, quantity: 1 }],
+                    items: [{ productId: prodA.id, quantity: 1, unitPrice: 50 }],
                 });
 
             expect(createResponse.status).toBe(201);
@@ -193,7 +195,7 @@ describe('Customer Order Module - Integration', () => {
                     adminId: otherAdminId,
                     shopId,
                     orderDate: new Date().toISOString(),
-                    items: [{ productId: prodA.id, quantity: 1 }],
+                    items: [{ productId: prodA.id, quantity: 1, unitPrice: 50 }],
                 });
 
             expect(response.body.error?.code).toBe('UNAUTHORIZED');
@@ -208,7 +210,7 @@ describe('Customer Order Module - Integration', () => {
                     adminId,
                     shopId,
                     orderDate: new Date().toISOString(),
-                    items: [{ productId: prodA.id, quantity: 1 }],
+                    items: [{ productId: prodA.id, quantity: 1, unitPrice: 50 }],
                 });
 
             expect(createResponse.status).toBe(201);
@@ -236,7 +238,7 @@ describe('Customer Order Module - Integration', () => {
                     adminId,
                     shopId,
                     orderDate: new Date().toISOString(),
-                    items: [{ productId: prodA.id, quantity: 1 }],
+                    items: [{ productId: prodA.id, quantity: 1, unitPrice: 50 }],
                 });
 
             expect(createResponse.status).toBe(201);
@@ -250,7 +252,7 @@ describe('Customer Order Module - Integration', () => {
                     adminId,
                     shopId,
                     orderDate: new Date().toISOString(),
-                    items: [{ productId: prodA.id, quantity: 2 }],
+                    items: [{ productId: prodA.id, quantity: 2, unitPrice: 50 }],
                 });
 
             expect(response.status).toBe(200);
@@ -283,7 +285,9 @@ describe('Customer Order Module - Integration', () => {
                     adminId,
                     shopId,
                     orderDate: new Date().toISOString(),
-                    items: [{ productId: '00000000-0000-0000-0000-000000000000', quantity: 1 }],
+                    items: [
+                        { productId: '00000000-0000-0000-0000-000000000000', quantity: 1, unitPrice: 50 },
+                    ],
                 });
 
             expect(response.status).toBe(404);
@@ -298,7 +302,7 @@ describe('Customer Order Module - Integration', () => {
                     adminId,
                     shopId,
                     orderDate: new Date().toISOString(),
-                    items: [{ productId: prodB.id, quantity: 1 }],
+                    items: [{ productId: prodB.id, quantity: 1, unitPrice: 50 }],
                 });
 
             expect(createResponse.status).toBe(201);
@@ -311,7 +315,7 @@ describe('Customer Order Module - Integration', () => {
                     adminId,
                     shopId,
                     orderDate: new Date().toISOString(),
-                    items: [{ productId: prodB.id, quantity: 2 }],
+                    items: [{ productId: prodB.id, quantity: 2, unitPrice: 50 }],
                 });
 
             expect(response.status).toBe(400);
@@ -336,8 +340,8 @@ describe('Customer Order Module - Integration', () => {
                     shopId,
                     orderDate: new Date().toISOString(),
                     items: [
-                        { productId: prodA.id, quantity: 1 },
-                        { productId: '00000000-0000-0000-0000-000000000000', quantity: 1 },
+                        { productId: prodA.id, quantity: 1, unitPrice: 50 },
+                        { productId: '00000000-0000-0000-0000-000000000000', quantity: 1, unitPrice: 50 },
                     ],
                 });
 
@@ -362,7 +366,7 @@ describe('Customer Order Module - Integration', () => {
                     adminId,
                     shopId,
                     orderDate: new Date().toISOString(),
-                    items: [{ productId: prodA.id, quantity: 999999 }],
+                    items: [{ productId: prodA.id, quantity: 999999, unitPrice: 50 }],
                 });
 
             expect(response.status).toBe(400);
@@ -386,7 +390,7 @@ describe('Customer Order Module - Integration', () => {
                     adminId,
                     shopId,
                     orderDate: new Date().toISOString(),
-                    items: [{ productId: prodB.id, quantity: 1 }],
+                    items: [{ productId: prodB.id, quantity: 1, unitPrice: 50 }],
                 });
 
             expect(response.status).toBe(200);
@@ -413,8 +417,8 @@ describe('Customer Order Module - Integration', () => {
                     shopId,
                     orderDate: new Date().toISOString(),
                     items: [
-                        { productId: prodA.id, quantity: 1 },
-                        { productId: prodB.id, quantity: 1 },
+                        { productId: prodA.id, quantity: 1, unitPrice: 50 },
+                        { productId: prodB.id, quantity: 1, unitPrice: 100 },
                     ],
                 });
 
@@ -441,7 +445,7 @@ describe('Customer Order Module - Integration', () => {
                     adminId,
                     shopId,
                     orderDate: new Date().toISOString(),
-                    items: [{ productId: prodB.id, quantity: 1 }],
+                    items: [{ productId: prodB.id, quantity: 1, unitPrice: 50 }],
                 });
 
             expect(response.status).toBe(200);
@@ -458,7 +462,7 @@ describe('Customer Order Module - Integration', () => {
                     adminId,
                     shopId,
                     orderDate: new Date().toISOString(),
-                    items: [{ productId: prodA.id, quantity: 1 }],
+                    items: [{ productId: prodA.id, quantity: 1, unitPrice: 50 }],
                 });
 
             expect(createResponse.status).toBe(201);
@@ -471,7 +475,7 @@ describe('Customer Order Module - Integration', () => {
                     adminId,
                     shopId,
                     orderDate: new Date().toISOString(),
-                    items: [{ productId: prodA.id, quantity: 10 }],
+                    items: [{ productId: prodA.id, quantity: 10, unitPrice: 50 }],
                 });
 
             expect(response.status).toBe(200);
@@ -499,7 +503,7 @@ describe('Customer Order Module - Integration', () => {
                     adminId,
                     shopId,
                     orderDate: new Date().toISOString(),
-                    items: [{ productId: prodA.id, quantity: 5 }],
+                    items: [{ productId: prodA.id, quantity: 5, unitPrice: 50 }],
                 });
 
             expect(createResponse.status).toBe(201);
@@ -519,7 +523,7 @@ describe('Customer Order Module - Integration', () => {
                     adminId,
                     shopId: shop2.id, // Change to shop 2
                     orderDate: new Date().toISOString(),
-                    items: [{ productId: prodA.id, quantity: 5 }],
+                    items: [{ productId: prodA.id, quantity: 5, unitPrice: 50 }],
                 });
 
             expect(response.status).toBe(200);
@@ -558,7 +562,7 @@ describe('Customer Order Module - Integration', () => {
                     adminId,
                     shopId,
                     orderDate: new Date().toISOString(),
-                    items: [{ productId: prodA.id, quantity: 5 }],
+                    items: [{ productId: prodA.id, quantity: 5, unitPrice: 50 }],
                 });
 
             expect(createResponse.status).toBe(201);
@@ -572,7 +576,7 @@ describe('Customer Order Module - Integration', () => {
                     adminId,
                     shopId: shop2.id,
                     orderDate: new Date().toISOString(),
-                    items: [{ productId: prodA.id, quantity: 5 }],
+                    items: [{ productId: prodA.id, quantity: 5, unitPrice: 50 }],
                 });
 
             expect(response.status).toBe(400);
@@ -600,7 +604,7 @@ describe('Customer Order Module - Integration', () => {
                     adminId,
                     shopId,
                     orderDate: new Date().toISOString(),
-                    items: [{ productId: prodA.id, quantity: 3 }],
+                    items: [{ productId: prodA.id, quantity: 3, unitPrice: 50 }],
                 });
 
             expect(createResponse.status).toBe(201);
@@ -614,7 +618,7 @@ describe('Customer Order Module - Integration', () => {
                     adminId,
                     shopId: shop2.id,
                     orderDate: new Date().toISOString(),
-                    items: [{ productId: prodB.id, quantity: 3 }],
+                    items: [{ productId: prodB.id, quantity: 3, unitPrice: 50 }],
                 });
 
             expect(response.status).toBe(200);
@@ -644,7 +648,7 @@ describe('Customer Order Module - Integration', () => {
                     adminId,
                     shopId,
                     orderDate: new Date().toISOString(),
-                    items: [{ productId: prodA.id, quantity: 2 }],
+                    items: [{ productId: prodA.id, quantity: 2, unitPrice: 50 }],
                 });
 
             expect(createResponse.status).toBe(201);
@@ -658,7 +662,7 @@ describe('Customer Order Module - Integration', () => {
                     adminId,
                     shopId: 99999, // Non-existent shop
                     orderDate: new Date().toISOString(),
-                    items: [{ productId: prodA.id, quantity: 2 }],
+                    items: [{ productId: prodA.id, quantity: 2, unitPrice: 50 }],
                 });
 
             expect(response.status).toBe(404);
@@ -675,7 +679,7 @@ describe('Customer Order Module - Integration', () => {
                     adminId,
                     shopId,
                     orderDate: new Date().toISOString(),
-                    items: [{ productId: prodA.id, quantity: 2 }],
+                    items: [{ productId: prodA.id, quantity: 2, unitPrice: 50 }],
                 });
 
             expect(createResponse.status).toBe(201);
@@ -702,7 +706,7 @@ describe('Customer Order Module - Integration', () => {
                     adminId,
                     shopId,
                     orderDate: new Date().toISOString(),
-                    items: [{ productId: prodA.id, quantity: 1 }],
+                    items: [{ productId: prodA.id, quantity: 1, unitPrice: 50 }],
                 });
 
             expect(createResponse.status).toBe(201);
@@ -729,7 +733,7 @@ describe('Customer Order Module - Integration', () => {
                     adminId,
                     shopId,
                     orderDate: new Date().toISOString(),
-                    items: [{ productId: prodA.id, quantity: 5 }],
+                    items: [{ productId: prodA.id, quantity: 5, unitPrice: 50 }],
                 });
 
             expect(createResponse.status).toBe(201);
@@ -766,7 +770,7 @@ describe('Customer Order Module - Integration', () => {
                     adminId,
                     shopId,
                     orderDate: new Date().toISOString(),
-                    items: [{ productId: prodNoInventory.id, quantity: 1 }],
+                    items: [{ productId: prodNoInventory.id, quantity: 1, unitPrice: 50 }],
                 });
 
             expect(response.status).toBe(404);
@@ -784,7 +788,7 @@ describe('Customer Order Module - Integration', () => {
                     adminId,
                     shopId,
                     orderDate: futureDate.toISOString(),
-                    items: [{ productId: prodA.id, quantity: 1 }],
+                    items: [{ productId: prodA.id, quantity: 1, unitPrice: 50 }],
                 });
 
             expect([201, 400]).toContain(response.status);
@@ -801,7 +805,7 @@ describe('Customer Order Module - Integration', () => {
                     adminId,
                     shopId,
                     orderDate: pastDate.toISOString(),
-                    items: [{ productId: prodA.id, quantity: 1 }],
+                    items: [{ productId: prodA.id, quantity: 1, unitPrice: 50 }],
                 });
 
             expect([201, 400]).toContain(response.status);

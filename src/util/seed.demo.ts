@@ -46,21 +46,21 @@ export async function seedDemo() {
         category: 'Electronics',
         unitPrice: new Decimal(1299.99),
         reorderLevel: 10,
-        stockQuantity: 50,
+        inventories: [{ shopId: 1, quantity: 50 }],
     });
     await createProduct({
         name: 'Wireless Mouse',
         category: 'Accessories',
         unitPrice: new Decimal(29.99),
         reorderLevel: 20,
-        stockQuantity: 100,
+        inventories: [{ shopId: 1, quantity: 100 }],
     });
     await createProduct({
         name: 'Ergonomic Chair',
         category: 'Furniture',
         unitPrice: new Decimal(349.5),
         reorderLevel: 5,
-        stockQuantity: 15,
+        inventories: [{ shopId: 1, quantity: 15 }],
     });
 
     console.log('Seeding purchase orders...');
@@ -71,13 +71,14 @@ export async function seedDemo() {
         await createPurchaseOrder(admin.id, {
             adminId: admin.id,
             supplierId: supplier.id,
+            shopId: 1,
             orderDate: new Date(),
             arrived: true,
             items: [
                 {
                     productId: product.id,
                     quantity: 10,
-                    unitPrice: new Decimal(1000.0), // Buying at cost
+                    unitPrice: new Decimal(1000.0),
                 },
             ],
         });
@@ -90,11 +91,13 @@ export async function seedDemo() {
     if (admin && productForCust) {
         await createCustomerOrder(admin.id, {
             adminId: admin.id,
+            shopId: 1,
             orderDate: new Date(),
             items: [
                 {
                     productId: productForCust.id,
                     quantity: 2,
+                    unitPrice: productForCust.unitPrice,
                 },
             ],
         });

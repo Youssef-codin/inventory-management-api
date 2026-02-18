@@ -5,8 +5,8 @@ const BaseSupplierSchema = z.object({
     name: z.string().nullable(),
     id: z.uuid(),
     contactEmail: z.email(),
-    phone: z.string(),
-    address: z.string(),
+    phone: z.string().min(1),
+    address: z.string().min(1),
 }) satisfies z.ZodType<Supplier>;
 
 export const CreateSupplierSchema = BaseSupplierSchema.omit({

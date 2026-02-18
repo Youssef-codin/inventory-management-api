@@ -1,3 +1,4 @@
+import { Decimal } from '@prisma/client/runtime/client';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { ERROR_CODE } from '../../src/middleware/errorHandler';
 import * as service from '../../src/modules/purchaseorder/purchaseorder.service';
@@ -24,7 +25,7 @@ describe('Purchase Order Module - Unit', () => {
     });
 
     describe('getPurchaseOrderById', () => {
-        it.todo('should throw 404 NOT_FOUND if order does not exist', async () => {
+        it('should throw 404 NOT_FOUND if order does not exist', async () => {
             vi.mocked(prisma.purchaseOrder.findUnique).mockResolvedValue(null);
 
             await expect(service.getPurchaseOrderById(mockOrderId)).rejects.toMatchObject({
@@ -32,10 +33,27 @@ describe('Purchase Order Module - Unit', () => {
                 code: ERROR_CODE.NOT_FOUND,
             });
         });
+
+        it('should return order if found', async () => {
+            const mockOrder = {
+                id: mockOrderId,
+                adminId: mockAdminId,
+                shopId: mockShopId,
+                supplierId: mockSupplierId,
+                orderDate: mockOrderDate,
+                totalAmount: new Decimal(100),
+                arrived: false,
+                items: [],
+            };
+            vi.mocked(prisma.purchaseOrder.findUnique).mockResolvedValue(mockOrder);
+
+            const result = await service.getPurchaseOrderById(mockOrderId);
+            expect(result).toEqual(mockOrder);
+        });
     });
 
     describe('deletePurchaseOrder', () => {
-        it.todo('should throw 404 NOT_FOUND if order does not exist', async () => {
+        it('should throw 404 NOT_FOUND if order does not exist', async () => {
             vi.mocked(prisma.purchaseOrder.findUnique).mockResolvedValue(null);
 
             await expect(service.deletePurchaseOrder(mockOrderId)).rejects.toMatchObject({

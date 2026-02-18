@@ -33,7 +33,7 @@ describe('Customer Order Module - Unit', () => {
                     adminId: otherAdminId,
                     shopId: mockShopId,
                     orderDate: mockOrderDate,
-                    items: [{ productId: mockProductId, quantity: 1 }],
+                    items: [{ productId: mockProductId, quantity: 1, unitPrice: 50 }],
                 }),
             ).rejects.toMatchObject({
                 status: 403,
@@ -49,7 +49,7 @@ describe('Customer Order Module - Unit', () => {
                     adminId: mockAdminId,
                     shopId: 99999,
                     orderDate: mockOrderDate,
-                    items: [{ productId: mockProductId, quantity: 1 }],
+                    items: [{ productId: mockProductId, quantity: 1, unitPrice: 50 }],
                 }),
             ).rejects.toMatchObject({
                 status: 404,
@@ -67,7 +67,7 @@ describe('Customer Order Module - Unit', () => {
                     adminId: otherAdminId,
                     shopId: mockShopId,
                     orderDate: mockOrderDate,
-                    items: [{ productId: mockProductId, quantity: 1 }],
+                    items: [{ productId: mockProductId, quantity: 1, unitPrice: 50 }],
                 }),
             ).rejects.toMatchObject({
                 status: 403,
@@ -83,7 +83,7 @@ describe('Customer Order Module - Unit', () => {
                     adminId: mockAdminId,
                     shopId: mockShopId,
                     orderDate: mockOrderDate,
-                    items: [{ productId: mockProductId, quantity: 1 }],
+                    items: [{ productId: mockProductId, quantity: 1, unitPrice: 50 }],
                 }),
             ).rejects.toMatchObject({
                 status: 404,

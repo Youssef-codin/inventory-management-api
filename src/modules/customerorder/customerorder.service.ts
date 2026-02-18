@@ -84,7 +84,6 @@ export async function createCustomerOrder(requestingAdminId: string, data: Creat
     }
 
     const productIds = data.items.map((item) => item.productId);
-    const itemsQuantity = new Map(data.items.map((i) => [i.productId, i]));
 
     const order = await prisma.$transaction(async (tx) => {
         const products = await tx.product.findMany({
@@ -96,18 +95,13 @@ export async function createCustomerOrder(requestingAdminId: string, data: Creat
             throw new AppError(404, 'One or more products not found', ERROR_CODE.NOT_FOUND);
         }
 
-        // map for perf
         const productsMap = new Map(products.map((p) => [p.id, p]));
 
-        // calculate total amount
-        const total = products.reduce((sum, prod) => {
-            const item = itemsQuantity.get(prod.id);
-            return sum + item!.quantity * prod.unitPrice.toNumber();
+        const total = data.items.reduce((sum, item) => {
+            return sum + item.quantity * Number(item.unitPrice);
         }, 0);
 
-        // update inventory with the new quantity
         for (const item of data.items) {
-            // make sure each item from the order can be fulfilled by our inventory
             const product = productsMap.get(item.productId);
             const inventory = product?.inventories[0];
 
@@ -144,7 +138,7 @@ export async function createCustomerOrder(requestingAdminId: string, data: Creat
                     create: data.items.map((item) => ({
                         productId: item.productId,
                         quantity: item.quantity,
-                        unitPrice: productsMap.get(item.productId)!.unitPrice,
+                        unitPrice: item.unitPrice,
                     })),
                 },
             },

@@ -74,14 +74,19 @@ export async function updateAdmin(id: AdminIdInput['id'], data: UpdateAdminInput
 
     if (!exists) throw new AppError(404, 'Admin with this Id does not exist', ERROR_CODE.NOT_FOUND);
 
+    const updateData: { username: string; passwordHash?: string } = {
+        username: data.username,
+    };
+
+    if (data.password) {
+        updateData.passwordHash = await hashPassword(data.password);
+    }
+
     return await prisma.admin.update({
         where: {
             id,
         },
-        data: {
-            username: data.username,
-            passwordHash: await hashPassword(data.password),
-        },
+        data: updateData,
         omit: {
             passwordHash: true,
         },

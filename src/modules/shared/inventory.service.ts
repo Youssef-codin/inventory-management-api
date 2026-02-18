@@ -41,6 +41,19 @@ export async function decrementInventory(
     item: { productId: string; decrementBy: number },
     shopId: number,
 ) {
+    const inventory = await ctx.inventory.findUnique({
+        where: {
+            productId_shopId: {
+                productId: item.productId,
+                shopId,
+            },
+        },
+    });
+
+    if (!inventory || inventory.quantity < item.decrementBy) {
+        throw new Error(`Insufficient stock for product ${item.productId} in shop ${shopId}`);
+    }
+
     await ctx.inventory.update({
         where: {
             productId_shopId: {

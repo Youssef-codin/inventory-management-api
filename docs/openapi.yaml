@@ -2,7 +2,26 @@ openapi: 3.0.0
 info:
   title: Inventory Management API
   version: 1.0.0
-  description: API for managing inventory, products, orders, and suppliers.
+  description: |
+    A comprehensive REST API for managing inventory across multiple shops.
+    
+    ## Features
+    - **Product Management**: Track products with categories, pricing, and reorder levels
+    - **Inventory Tracking**: Multi-shop inventory management with real-time stock levels
+    - **Purchase Orders**: Manage supplier orders with arrival tracking and stock updates
+    - **Customer Orders**: Process sales with automatic inventory deduction
+    - **Supplier Management**: Maintain supplier contact information
+    - **Shop Management**: Support for multiple retail locations
+    - **Low Stock Alerts**: Automatic detection of products below reorder thresholds
+    
+    ## Authentication
+    All endpoints except `/auth/login` require a valid JWT token in the Authorization header.
+    
+    ## Data Types
+    - **UUID**: All IDs use UUID v4 format (e.g., `550e8400-e29b-41d4-a716-446655440000`)
+    - **Decimal**: Monetary values use decimal precision (e.g., `99.99`)
+    - **DateTime**: ISO 8601 format (e.g., `2024-01-15T10:30:00Z`)
+
 servers:
   - url: http://localhost:3000
     description: Local development server
@@ -16,18 +35,28 @@ paths:
   # --------------------
   /auth/login:
     post:
-      summary: Login and retrieve JWT token
-      tags: [Auth]
+      summary: Authenticate and retrieve JWT token
+      description: |
+        Authenticate with username and password to receive a JWT token.
+        The token is valid for 1 hour and must be included in subsequent requests.
+      tags: [Authentication]
       security: []
       requestBody:
         required: true
+        description: Admin credentials for authentication
         content:
           application/json:
             schema:
               $ref: '#/components/schemas/AuthCredentials'
+            examples:
+              validLogin:
+                summary: Valid login example
+                value:
+                  username: "admin_user"
+                  password: "securePassword123"
       responses:
         '200':
-          description: Login successful
+          description: Authentication successful
           content:
             application/json:
               schema:
@@ -38,24 +67,31 @@ paths:
                     example: true
                   data:
                     type: string
-                    description: JWT Token
+                    description: JWT Bearer token (valid for 1 hour)
+                    example: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
         '401':
-          description: Invalid credentials
+          description: Invalid credentials - username not found or password incorrect
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
+              example:
+                success: false
+                error:
+                  message: "Invalid credentials"
+                  code: "INVALID_CREDENTIALS"
 
   # --------------------
   # Product Routes
   # --------------------
   /product:
     get:
-      summary: Get all products
-      tags: [Product]
+      summary: List all products
+      description: Retrieve a complete list of all products with their inventory across all shops
+      tags: [Products]
       responses:
         '200':
-          description: List of all products
+          description: Successfully retrieved product list
           content:
             application/json:
               schema:
@@ -69,36 +105,32 @@ paths:
                     items:
                       $ref: '#/components/schemas/Product'
 
-  /product/low-stock:
-    get:
-      summary: Get all products with stock quantity less than or equal to reorder level
-      tags: [Product]
-      responses:
-        '200':
-          description: List of low stock products
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  success:
-                    type: boolean
-                    example: true
-                  data:
-                    type: array
-                    items:
-                      $ref: '#/components/schemas/LowStockProduct'
-
-  /product/add:
     post:
       summary: Create a new product
-      tags: [Product]
+      description: |
+        Create a new product with initial inventory allocation across shops.
+        Each product must have at least one inventory entry.
+      tags: [Products]
       requestBody:
         required: true
+        description: Product details with initial inventory
         content:
           application/json:
             schema:
               $ref: '#/components/schemas/CreateProductInput'
+            examples:
+              newProduct:
+                summary: Create a new laptop product
+                value:
+                  name: "MacBook Pro 16"
+                  category: "Electronics"
+                  unitPrice: 2499.99
+                  reorderLevel: 5
+                  inventories:
+                    - shopId: 1
+                      quantity: 10
+                    - shopId: 2
+                      quantity: 5
       responses:
         '201':
           description: Product created successfully
@@ -113,23 +145,56 @@ paths:
                   data:
                     $ref: '#/components/schemas/Product'
         '400':
-          description: Validation error
+          description: Validation error - missing required fields or invalid data
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '409':
+          description: Product name already exists
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
 
+  /product/low-stock:
+    get:
+      summary: Get low stock products
+      description: |
+        Retrieve all products where inventory quantity is at or below the reorder level.
+        Useful for identifying products that need restocking.
+      tags: [Products]
+      responses:
+        '200':
+          description: List of products with low stock
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/LowStockProduct'
+
   /product/search:
     get:
       summary: Search products by name
-      tags: [Product]
+      description: Perform case-insensitive search for products matching the provided name substring
+      tags: [Products]
       parameters:
         - in: query
           name: name
           schema:
             type: string
+            minLength: 1
+            maxLength: 100
           required: true
-          description: Name substring to search for
+          description: Product name or partial name to search for
+          example: "laptop"
       responses:
         '200':
           description: List of matching products
@@ -148,8 +213,9 @@ paths:
 
   /product/{id}:
     get:
-      summary: Get a product by ID
-      tags: [Product]
+      summary: Get product by ID
+      description: Retrieve detailed information about a specific product including all inventory levels
+      tags: [Products]
       parameters:
         - in: path
           name: id
@@ -157,9 +223,11 @@ paths:
             type: string
             format: uuid
           required: true
+          description: UUID of the product to retrieve
+          example: "550e8400-e29b-41d4-a716-446655440000"
       responses:
         '200':
-          description: Product details
+          description: Product details retrieved successfully
           content:
             application/json:
               schema:
@@ -176,10 +244,18 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
+              example:
+                success: false
+                error:
+                  message: "Product with such ID not found"
+                  code: "NOT_FOUND"
 
     put:
-      summary: Update a product
-      tags: [Product]
+      summary: Update product
+      description: |
+        Update product details and replace all inventory allocations.
+        Note: This replaces ALL existing inventory data with the new data provided.
+      tags: [Products]
       parameters:
         - in: path
           name: id
@@ -187,6 +263,8 @@ paths:
             type: string
             format: uuid
           required: true
+          description: UUID of the product to update
+          example: "550e8400-e29b-41d4-a716-446655440000"
       requestBody:
         required: true
         content:
@@ -215,7 +293,10 @@ paths:
 
     patch:
       summary: Update product stock quantity
-      tags: [Product]
+      description: |
+        Update the stock quantity for a specific product in a specific shop.
+        This sets the absolute quantity (not a delta).
+      tags: [Products]
       parameters:
         - in: path
           name: id
@@ -223,15 +304,24 @@ paths:
             type: string
             format: uuid
           required: true
+          description: UUID of the product
+          example: "550e8400-e29b-41d4-a716-446655440000"
       requestBody:
         required: true
+        description: New stock quantity details
         content:
           application/json:
             schema:
               $ref: '#/components/schemas/UpdateStockInput'
+            examples:
+              updateStock:
+                summary: Update stock in shop 1
+                value:
+                  shopId: 1
+                  newQuantity: 50
       responses:
         '200':
-          description: Product stock updated successfully
+          description: Stock updated successfully
           content:
             application/json:
               schema:
@@ -243,7 +333,7 @@ paths:
                   data:
                     $ref: '#/components/schemas/Inventory'
         '400':
-          description: Validation error
+          description: Validation error - negative quantity or invalid shop
           content:
             application/json:
               schema:
@@ -256,8 +346,11 @@ paths:
                 $ref: '#/components/schemas/ErrorResponse'
 
     delete:
-      summary: Delete a product
-      tags: [Product]
+      summary: Delete product
+      description: |
+        Permanently delete a product and all associated inventory records.
+        Note: Cannot delete products that have order history.
+      tags: [Products]
       parameters:
         - in: path
           name: id
@@ -265,20 +358,35 @@ paths:
             type: string
             format: uuid
           required: true
+          description: UUID of the product to delete
+          example: "550e8400-e29b-41d4-a716-446655440000"
       responses:
         '204':
           description: Product deleted successfully
+        '404':
+          description: Product not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '409':
+          description: Cannot delete product with existing orders
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
 
   # --------------------
   # Admin Routes
   # --------------------
   /admin:
     get:
-      summary: Get all admins
-      tags: [Admin]
+      summary: List all admins
+      description: Retrieve a list of all admin accounts (passwords excluded)
+      tags: [Admins]
       responses:
         '200':
-          description: List of all admins
+          description: List of admins retrieved successfully
           content:
             application/json:
               schema:
@@ -292,16 +400,22 @@ paths:
                     items:
                       $ref: '#/components/schemas/Admin'
 
-  /admin/add:
     post:
-      summary: Create a new admin
-      tags: [Admin]
+      summary: Create new admin
+      description: Create a new admin account with a secure password
+      tags: [Admins]
       requestBody:
         required: true
         content:
           application/json:
             schema:
               $ref: '#/components/schemas/CreateAdminInput'
+            examples:
+              newAdmin:
+                summary: Create a new admin
+                value:
+                  username: "john_doe"
+                  password: "SecurePass123!"
       responses:
         '201':
           description: Admin created successfully
@@ -315,20 +429,35 @@ paths:
                     example: true
                   data:
                     $ref: '#/components/schemas/Admin'
+        '409':
+          description: Username already taken
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                success: false
+                error:
+                  message: "Username is already taken"
+                  code: "USERNAME_TAKEN"
 
   /admin/search:
     get:
-      summary: Get admin by username
-      tags: [Admin]
+      summary: Search admins by username
+      description: Perform case-insensitive search for admins by username substring
+      tags: [Admins]
       parameters:
         - in: query
           name: username
           schema:
             type: string
+            minLength: 1
           required: true
+          description: Username or partial username to search for
+          example: "john"
       responses:
         '200':
-          description: Admin details
+          description: List of matching admins
           content:
             application/json:
               schema:
@@ -338,14 +467,15 @@ paths:
                     type: boolean
                     example: true
                   data:
-                    type: array 
-                    items: 
-                      $ref: '#/components/schemas/Admin' 
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Admin'
 
   /admin/{id}:
     get:
       summary: Get admin by ID
-      tags: [Admin]
+      description: Retrieve admin details by UUID
+      tags: [Admins]
       parameters:
         - in: path
           name: id
@@ -353,9 +483,11 @@ paths:
             type: string
             format: uuid
           required: true
+          description: UUID of the admin
+          example: "550e8400-e29b-41d4-a716-446655440000"
       responses:
         '200':
-          description: Admin details
+          description: Admin details retrieved successfully
           content:
             application/json:
               schema:
@@ -366,10 +498,19 @@ paths:
                     example: true
                   data:
                     $ref: '#/components/schemas/Admin'
+        '404':
+          description: Admin not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
 
     put:
       summary: Update admin
-      tags: [Admin]
+      description: |
+        Update admin details. Password is optional - if provided, it will be hashed and updated.
+        If password is omitted, only the username is updated.
+      tags: [Admins]
       parameters:
         - in: path
           name: id
@@ -377,15 +518,27 @@ paths:
             type: string
             format: uuid
           required: true
+          description: UUID of the admin to update
+          example: "550e8400-e29b-41d4-a716-446655440000"
       requestBody:
         required: true
         content:
           application/json:
             schema:
               $ref: '#/components/schemas/UpdateAdminInput'
+            examples:
+              updateUsername:
+                summary: Update only username
+                value:
+                  username: "jane_doe"
+              updateBoth:
+                summary: Update username and password
+                value:
+                  username: "jane_doe"
+                  password: "NewSecurePass456!"
       responses:
         '200':
-          description: Admin updated
+          description: Admin updated successfully
           content:
             application/json:
               schema:
@@ -396,10 +549,19 @@ paths:
                     example: true
                   data:
                     $ref: '#/components/schemas/Admin'
+        '404':
+          description: Admin not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
 
     delete:
       summary: Delete admin
-      tags: [Admin]
+      description: |
+        Permanently delete an admin account.
+        Note: Cannot delete your own account or the last remaining admin.
+      tags: [Admins]
       parameters:
         - in: path
           name: id
@@ -407,26 +569,87 @@ paths:
             type: string
             format: uuid
           required: true
+          description: UUID of the admin to delete
+          example: "550e8400-e29b-41d4-a716-446655440000"
       responses:
         '204':
-          description: Admin deleted
+          description: Admin deleted successfully
+        '404':
+          description: Admin not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: Cannot delete own account or last admin
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
 
   # --------------------
   # Customer Order Routes
   # --------------------
-  /customer-order/add:
+  /customer-order:
+    get:
+      summary: List all customer orders
+      description: Retrieve all customer orders sorted by date (newest first)
+      tags: [Customer Orders]
+      responses:
+        '200':
+          description: List of customer orders retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/CustomerOrder'
+
     post:
       summary: Create customer order
-      tags: [Customer Order]
+      description: |
+        Create a new customer order and automatically decrement inventory.
+        Each item must have sufficient stock available in the specified shop.
+      tags: [Customer Orders]
       requestBody:
         required: true
         content:
           application/json:
             schema:
               $ref: '#/components/schemas/CreateCustomerOrderInput'
+            examples:
+              singleItem:
+                summary: Single item order
+                value:
+                  orderDate: "2024-01-15T10:00:00Z"
+                  adminId: "550e8400-e29b-41d4-a716-446655440000"
+                  shopId: 1
+                  items:
+                    - productId: "660e8400-e29b-41d4-a716-446655440000"
+                      quantity: 2
+                      unitPrice: 99.99
+              multiItem:
+                summary: Multiple items order
+                value:
+                  orderDate: "2024-01-15T10:00:00Z"
+                  adminId: "550e8400-e29b-41d4-a716-446655440000"
+                  shopId: 1
+                  items:
+                    - productId: "660e8400-e29b-41d4-a716-446655440000"
+                      quantity: 2
+                      unitPrice: 99.99
+                    - productId: "770e8400-e29b-41d4-a716-446655440000"
+                      quantity: 1
+                      unitPrice: 149.99
       responses:
         '201':
-          description: Order created
+          description: Order created successfully
           content:
             application/json:
               schema:
@@ -438,21 +661,46 @@ paths:
                   data:
                     type: object
                     properties:
-                      order: 
+                      order:
                         $ref: '#/components/schemas/CustomerOrder'
-                      lowStockProductIds:
+                      lowStockProducts:
                         type: array
                         items:
-                          type: object
-                          properties:
-                            id:
-                              type: string
-                              format: uuid
+                          $ref: '#/components/schemas/LowStockProduct'
+                        description: Products that fell below reorder level after this order
+        '400':
+          description: Validation error or insufficient stock
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                validationError:
+                  summary: Validation error
+                  value:
+                    success: false
+                    error:
+                      message: "Invalid input data"
+                      code: "VALIDATION_FAILED"
+                insufficientStock:
+                  summary: Insufficient stock
+                  value:
+                    success: false
+                    error:
+                      message: "Insufficient stock for customer order"
+                      code: "INSUFFICIENT_STOCK"
+        '403':
+          description: Unauthorized - cannot create order for another admin
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
 
   /customer-order/{id}:
     get:
       summary: Get customer order by ID
-      tags: [Customer Order]
+      description: Retrieve detailed information about a specific customer order
+      tags: [Customer Orders]
       parameters:
         - in: path
           name: id
@@ -460,9 +708,11 @@ paths:
             type: string
             format: uuid
           required: true
+          description: UUID of the customer order
+          example: "550e8400-e29b-41d4-a716-446655440000"
       responses:
         '200':
-          description: Order details
+          description: Order details retrieved successfully
           content:
             application/json:
               schema:
@@ -473,10 +723,24 @@ paths:
                     example: true
                   data:
                     $ref: '#/components/schemas/CustomerOrder'
+        '404':
+          description: Order not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
 
     put:
       summary: Update customer order
-      tags: [Customer Order]
+      description: |
+        Update an existing customer order. Inventory is adjusted automatically:
+        - Increased quantities: Additional stock deducted
+        - Decreased quantities: Stock returned
+        - Removed items: Stock returned
+        - Added items: Stock deducted
+        
+        Note: Cannot change shops on update. Delete and recreate to change shops.
+      tags: [Customer Orders]
       parameters:
         - in: path
           name: id
@@ -484,6 +748,8 @@ paths:
             type: string
             format: uuid
           required: true
+          description: UUID of the customer order to update
+          example: "550e8400-e29b-41d4-a716-446655440000"
       requestBody:
         required: true
         content:
@@ -492,7 +758,7 @@ paths:
               $ref: '#/components/schemas/UpdateCustomerOrderInput'
       responses:
         '200':
-          description: Order updated
+          description: Order updated successfully
           content:
             application/json:
               schema:
@@ -502,11 +768,39 @@ paths:
                     type: boolean
                     example: true
                   data:
-                    $ref: '#/components/schemas/CustomerOrder'
+                    type: object
+                    properties:
+                      updatedOrder:
+                        $ref: '#/components/schemas/CustomerOrder'
+                      lowStockProducts:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/LowStockProduct'
+        '400':
+          description: Validation error or insufficient stock
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: Unauthorized - cannot update another admin's order
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Order or product not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
 
     delete:
       summary: Delete customer order
-      tags: [Customer Order]
+      description: |
+        Delete a customer order and return all inventory to stock.
+        Note: This restores all quantities to inventory.
+      tags: [Customer Orders]
       parameters:
         - in: path
           name: id
@@ -514,26 +808,88 @@ paths:
             type: string
             format: uuid
           required: true
+          description: UUID of the customer order to delete
+          example: "550e8400-e29b-41d4-a716-446655440000"
       responses:
         '204':
-          description: Order deleted
+          description: Order deleted successfully and inventory restored
+        '404':
+          description: Order not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
 
   # --------------------
   # Purchase Order Routes
   # --------------------
-  /purchase-order/add:
+  /purchase-order:
+    get:
+      summary: List all purchase orders
+      description: Retrieve all purchase orders sorted by date (newest first)
+      tags: [Purchase Orders]
+      responses:
+        '200':
+          description: List of purchase orders retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/PurchaseOrder'
+
     post:
       summary: Create purchase order
-      tags: [Purchase Order]
+      description: |
+        Create a new purchase order from a supplier.
+        
+        ## Arrival Behavior
+        - **arrived: false** (default): Order is created, no inventory changes
+        - **arrived: true**: Order is created AND inventory is immediately increased
+        
+        Use `arrived: true` for orders that have already been received.
+        Use `PATCH /purchase-order/{id}` to mark pending orders as arrived later.
+      tags: [Purchase Orders]
       requestBody:
         required: true
         content:
           application/json:
             schema:
               $ref: '#/components/schemas/CreatePurchaseOrderInput'
+            examples:
+              pendingOrder:
+                summary: Create pending order (not yet arrived)
+                value:
+                  orderDate: "2024-01-15T10:00:00Z"
+                  arrived: false
+                  adminId: "550e8400-e29b-41d4-a716-446655440000"
+                  supplierId: "660e8400-e29b-41d4-a716-446655440000"
+                  shopId: 1
+                  items:
+                    - productId: "770e8400-e29b-41d4-a716-446655440000"
+                      quantity: 10
+                      unitPrice: 50.00
+              arrivedOrder:
+                summary: Create arrived order (inventory updated immediately)
+                value:
+                  orderDate: "2024-01-15T10:00:00Z"
+                  arrived: true
+                  adminId: "550e8400-e29b-41d4-a716-446655440000"
+                  supplierId: "660e8400-e29b-41d4-a716-446655440000"
+                  shopId: 1
+                  items:
+                    - productId: "770e8400-e29b-41d4-a716-446655440000"
+                      quantity: 10
+                      unitPrice: 50.00
       responses:
         '201':
-          description: Order created
+          description: Purchase order created successfully
           content:
             application/json:
               schema:
@@ -543,12 +899,38 @@ paths:
                     type: boolean
                     example: true
                   data:
-                    $ref: '#/components/schemas/PurchaseOrder'
+                    type: object
+                    properties:
+                      order:
+                        $ref: '#/components/schemas/PurchaseOrder'
+                      lowStockProducts:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/LowStockProduct'
+        '400':
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: Unauthorized - cannot create order for another admin
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Supplier, product, or inventory not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
 
   /purchase-order/{id}:
     get:
       summary: Get purchase order by ID
-      tags: [Purchase Order]
+      description: Retrieve detailed information about a specific purchase order
+      tags: [Purchase Orders]
       parameters:
         - in: path
           name: id
@@ -556,9 +938,11 @@ paths:
             type: string
             format: uuid
           required: true
+          description: UUID of the purchase order
+          example: "550e8400-e29b-41d4-a716-446655440000"
       responses:
         '200':
-          description: Order details
+          description: Order details retrieved successfully
           content:
             application/json:
               schema:
@@ -569,10 +953,32 @@ paths:
                     example: true
                   data:
                     $ref: '#/components/schemas/PurchaseOrder'
+        '404':
+          description: Order not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
 
     put:
       summary: Update purchase order
-      tags: [Purchase Order]
+      description: |
+        Update an existing purchase order with full item replacement.
+        
+        ## Inventory Behavior Based on Arrival Status
+        
+        ### If Order Already Arrived:
+        Inventory is adjusted immediately:
+        - Quantity increased: More stock added
+        - Quantity decreased: Stock removed (must have sufficient inventory)
+        - Items removed: Stock removed
+        - Items added: Stock added
+        - Shop changed: Stock transferred between shops
+        
+        ### If Order Not Yet Arrived:
+        - `arrived: false`: Only order details updated, no inventory changes
+        - `arrived: true` (changed from false): Inventory immediately updated for all items
+      tags: [Purchase Orders]
       parameters:
         - in: path
           name: id
@@ -580,6 +986,8 @@ paths:
             type: string
             format: uuid
           required: true
+          description: UUID of the purchase order to update
+          example: "550e8400-e29b-41d4-a716-446655440000"
       requestBody:
         required: true
         content:
@@ -588,7 +996,7 @@ paths:
               $ref: '#/components/schemas/UpdatePurchaseOrderInput'
       responses:
         '200':
-          description: Order updated
+          description: Order updated successfully
           content:
             application/json:
               schema:
@@ -598,11 +1006,43 @@ paths:
                     type: boolean
                     example: true
                   data:
-                    $ref: '#/components/schemas/PurchaseOrder'
+                    type: object
+                    properties:
+                      updatedOrder:
+                        $ref: '#/components/schemas/PurchaseOrder'
+                      lowStockProducts:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/LowStockProduct'
+        '400':
+          description: Validation error or insufficient stock
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: Unauthorized - cannot update another admin's order
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Order, product, or inventory not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
 
     delete:
       summary: Delete purchase order
-      tags: [Purchase Order]
+      description: |
+        Delete a purchase order.
+        
+        ## Important Notes
+        - If order was marked as arrived: Inventory is NOT automatically restored
+        - Manual stock adjustment required if inventory needs correction
+        - Consider the financial and stock implications before deleting
+      tags: [Purchase Orders]
       parameters:
         - in: path
           name: id
@@ -610,13 +1050,29 @@ paths:
             type: string
             format: uuid
           required: true
+          description: UUID of the purchase order to delete
+          example: "550e8400-e29b-41d4-a716-446655440000"
       responses:
         '204':
-          description: Order deleted
+          description: Order deleted successfully
+        '404':
+          description: Order not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
 
     patch:
       summary: Mark purchase order as arrived
-      tags: [Purchase Order]
+      description: |
+        Mark a pending purchase order as arrived and immediately update inventory.
+        
+        ## Behavior
+        - Sets `arrived: true` on the order
+        - Increases inventory for all items in the order
+        - Cannot be used on orders already marked as arrived
+        - Validates that inventory records exist before updating
+      tags: [Purchase Orders]
       parameters:
         - in: path
           name: id
@@ -624,9 +1080,11 @@ paths:
             type: string
             format: uuid
           required: true
+          description: UUID of the purchase order to mark as arrived
+          example: "550e8400-e29b-41d4-a716-446655440000"
       responses:
         '200':
-          description: Order marked as arrived
+          description: Order marked as arrived and inventory updated
           content:
             application/json:
               schema:
@@ -638,13 +1096,18 @@ paths:
                   data:
                     $ref: '#/components/schemas/PurchaseOrder'
         '400':
-          description: Order already arrived or invalid state
+          description: Order already arrived
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
+              example:
+                success: false
+                error:
+                  message: "Order already marked as arrived"
+                  code: "INVALID_STATE"
         '404':
-          description: Order not found
+          description: Order not found or inventory record missing
           content:
             application/json:
               schema:
@@ -655,11 +1118,12 @@ paths:
   # --------------------
   /supplier:
     get:
-      summary: Get all suppliers
-      tags: [Supplier]
+      summary: List all suppliers
+      description: Retrieve a complete list of all suppliers
+      tags: [Suppliers]
       responses:
         '200':
-          description: List of all suppliers
+          description: List of suppliers retrieved successfully
           content:
             application/json:
               schema:
@@ -673,19 +1137,27 @@ paths:
                     items:
                       $ref: '#/components/schemas/Supplier'
 
-  /supplier/add:
     post:
       summary: Create supplier
-      tags: [Supplier]
+      description: Add a new supplier to the system
+      tags: [Suppliers]
       requestBody:
         required: true
         content:
           application/json:
             schema:
               $ref: '#/components/schemas/CreateSupplierInput'
+            examples:
+              newSupplier:
+                summary: Create a new supplier
+                value:
+                  name: "TechCorp Inc."
+                  contactEmail: "orders@techcorp.com"
+                  phone: "+1-555-123-4567"
+                  address: "123 Tech Street, Silicon Valley, CA 94025"
       responses:
         '201':
-          description: Supplier created
+          description: Supplier created successfully
           content:
             application/json:
               schema:
@@ -696,11 +1168,18 @@ paths:
                     example: true
                   data:
                     $ref: '#/components/schemas/Supplier'
+        '400':
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
 
   /supplier/product/{productId}:
     get:
-      summary: Get suppliers by product ID
-      tags: [Supplier]
+      summary: Get suppliers by product
+      description: Retrieve all suppliers that have provided a specific product
+      tags: [Suppliers]
       parameters:
         - in: path
           name: productId
@@ -708,10 +1187,11 @@ paths:
             type: string
             format: uuid
           required: true
-          description: ID of the product to find suppliers for
+          description: UUID of the product to find suppliers for
+          example: "550e8400-e29b-41d4-a716-446655440000"
       responses:
         '200':
-          description: List of suppliers for the specified product
+          description: List of suppliers for the product
           content:
             application/json:
               schema:
@@ -734,7 +1214,8 @@ paths:
   /supplier/{id}:
     get:
       summary: Get supplier by ID
-      tags: [Supplier]
+      description: Retrieve supplier details by UUID
+      tags: [Suppliers]
       parameters:
         - in: path
           name: id
@@ -742,9 +1223,11 @@ paths:
             type: string
             format: uuid
           required: true
+          description: UUID of the supplier
+          example: "550e8400-e29b-41d4-a716-446655440000"
       responses:
         '200':
-          description: Supplier details
+          description: Supplier details retrieved successfully
           content:
             application/json:
               schema:
@@ -755,10 +1238,17 @@ paths:
                     example: true
                   data:
                     $ref: '#/components/schemas/Supplier'
+        '404':
+          description: Supplier not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
 
     put:
       summary: Update supplier
-      tags: [Supplier]
+      description: Update supplier information
+      tags: [Suppliers]
       parameters:
         - in: path
           name: id
@@ -766,6 +1256,8 @@ paths:
             type: string
             format: uuid
           required: true
+          description: UUID of the supplier to update
+          example: "550e8400-e29b-41d4-a716-446655440000"
       requestBody:
         required: true
         content:
@@ -774,7 +1266,7 @@ paths:
               $ref: '#/components/schemas/UpdateSupplierInput'
       responses:
         '200':
-          description: Supplier updated
+          description: Supplier updated successfully
           content:
             application/json:
               schema:
@@ -785,10 +1277,23 @@ paths:
                     example: true
                   data:
                     $ref: '#/components/schemas/Supplier'
+        '404':
+          description: Supplier not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
 
     delete:
       summary: Delete supplier
-      tags: [Supplier]
+      description: |
+        Delete a supplier from the system.
+        
+        ## Important Notes
+        - Associated purchase orders will have their supplierId set to NULL
+        - Historical order data is preserved
+        - Orders can still be viewed but won't show supplier information
+      tags: [Suppliers]
       parameters:
         - in: path
           name: id
@@ -796,20 +1301,29 @@ paths:
             type: string
             format: uuid
           required: true
+          description: UUID of the supplier to delete
+          example: "550e8400-e29b-41d4-a716-446655440000"
       responses:
         '204':
-          description: Supplier deleted
+          description: Supplier deleted successfully
+        '404':
+          description: Supplier not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
 
   # --------------------
   # Shop Routes
   # --------------------
   /shop:
     get:
-      summary: Get all shops
-      tags: [Shop]
+      summary: List all shops
+      description: Retrieve all shop locations
+      tags: [Shops]
       responses:
         '200':
-          description: List of all shops
+          description: List of shops retrieved successfully
           content:
             application/json:
               schema:
@@ -823,16 +1337,22 @@ paths:
                     items:
                       $ref: '#/components/schemas/Shop'
 
-  /shop/add:
     post:
       summary: Create a new shop
-      tags: [Shop]
+      description: Add a new retail location to the system
+      tags: [Shops]
       requestBody:
         required: true
         content:
           application/json:
             schema:
               $ref: '#/components/schemas/CreateShopInput'
+            examples:
+              newShop:
+                summary: Create a new shop
+                value:
+                  name: "Downtown Store"
+                  address: "456 Main Street, Downtown, NY 10001"
       responses:
         '201':
           description: Shop created successfully
@@ -856,16 +1376,19 @@ paths:
   /shop/{id}:
     get:
       summary: Get shop by ID
-      tags: [Shop]
+      description: Retrieve shop details by ID
+      tags: [Shops]
       parameters:
         - in: path
           name: id
           schema:
             type: integer
           required: true
+          description: ID of the shop
+          example: 1
       responses:
         '200':
-          description: Shop details
+          description: Shop details retrieved successfully
           content:
             application/json:
               schema:
@@ -885,13 +1408,16 @@ paths:
 
     put:
       summary: Update a shop
-      tags: [Shop]
+      description: Update shop information
+      tags: [Shops]
       parameters:
         - in: path
           name: id
           schema:
             type: integer
           required: true
+          description: ID of the shop to update
+          example: 1
       requestBody:
         required: true
         content:
@@ -920,17 +1446,37 @@ paths:
 
     delete:
       summary: Delete a shop
-      tags: [Shop]
+      description: |
+        Delete a shop from the system.
+        
+        ## Important Notes
+        - Cannot delete shops with existing inventory or orders
+        - All inventory must be transferred or removed first
+        - All orders must be reallocated or completed
+      tags: [Shops]
       parameters:
         - in: path
           name: id
           schema:
             type: integer
           required: true
+          description: ID of the shop to delete
+          example: 1
       responses:
         '204':
           description: Shop deleted successfully
-
+        '404':
+          description: Shop not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '409':
+          description: Cannot delete shop with existing inventory or orders
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
 
 components:
   securitySchemes:
@@ -938,10 +1484,14 @@ components:
       type: http
       scheme: bearer
       bearerFormat: JWT
+      description: |
+        Enter your JWT token in the format: `Bearer <token>`
+        
+        Obtain a token by calling `POST /auth/login` with valid credentials.
 
   schemas:
     # --------------------
-    # Error Schema
+    # Common Error Schema
     # --------------------
     ErrorResponse:
       type: object
@@ -954,40 +1504,16 @@ components:
           properties:
             message:
               type: string
+              description: Human-readable error message
             code:
               type: string
-
-    # --------------------
-    # Shop Schemas
-    # --------------------
-    Shop:
-      type: object
-      properties:
-        id:
-          type: integer
-        name:
-          type: string
-        address:
-          type: string
-
-    CreateShopInput:
-      type: object
+              description: Machine-readable error code for programmatic handling
+          required:
+            - message
+            - code
       required:
-        - name
-        - address
-      properties:
-        name:
-          type: string
-        address:
-          type: string
-
-    UpdateShopInput:
-      type: object
-      properties:
-        name:
-          type: string
-        address:
-          type: string
+        - success
+        - error
 
     # --------------------
     # Auth Schemas
@@ -1000,8 +1526,70 @@ components:
       properties:
         username:
           type: string
+          minLength: 1
+          maxLength: 50
+          description: Admin username
+          example: "admin_user"
         password:
           type: string
+          minLength: 1
+          description: Admin password
+          example: "securePassword123"
+
+    # --------------------
+    # Shop Schemas
+    # --------------------
+    Shop:
+      type: object
+      properties:
+        id:
+          type: integer
+          description: Unique shop identifier
+          example: 1
+        name:
+          type: string
+          description: Shop name
+          example: "Downtown Store"
+        address:
+          type: string
+          nullable: true
+          description: Shop address (optional)
+          example: "456 Main Street, Downtown, NY 10001"
+      required:
+        - id
+        - name
+
+    CreateShopInput:
+      type: object
+      required:
+        - name
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 100
+          description: Shop name
+          example: "Downtown Store"
+        address:
+          type: string
+          nullable: true
+          description: Shop address (optional)
+          example: "456 Main Street, Downtown, NY 10001"
+
+    UpdateShopInput:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 100
+          description: Shop name
+          example: "Downtown Store - Updated"
+        address:
+          type: string
+          nullable: true
+          description: Shop address
+          example: "789 New Street, Downtown, NY 10001"
 
     # --------------------
     # Product Schemas
@@ -1011,8 +1599,22 @@ components:
       properties:
         shopId:
           type: integer
+          description: ID of the shop where inventory is located
+          example: 1
+        productId:
+          type: string
+          format: uuid
+          description: UUID of the product
+          example: "550e8400-e29b-41d4-a716-446655440000"
         quantity:
           type: integer
+          minimum: 0
+          description: Current stock quantity
+          example: 50
+      required:
+        - shopId
+        - productId
+        - quantity
 
     Product:
       type: object
@@ -1020,18 +1622,39 @@ components:
         id:
           type: string
           format: uuid
+          description: Unique product identifier
+          example: "550e8400-e29b-41d4-a716-446655440000"
         name:
           type: string
+          description: Product name
+          example: "MacBook Pro 16"
         category:
           type: string
+          description: Product category
+          example: "Electronics"
         unitPrice:
           type: number
+          format: decimal
+          minimum: 0
+          description: Current unit price
+          example: 2499.99
         reorderLevel:
           type: integer
+          minimum: 0
+          description: Stock level that triggers low stock alert
+          example: 5
         inventories:
           type: array
           items:
             $ref: '#/components/schemas/Inventory'
+          description: Inventory levels across all shops
+      required:
+        - id
+        - name
+        - category
+        - unitPrice
+        - reorderLevel
+        - inventories
 
     LowStockProduct:
       type: object
@@ -1039,14 +1662,30 @@ components:
         productId:
           type: string
           format: uuid
+          description: UUID of the product
+          example: "550e8400-e29b-41d4-a716-446655440000"
         shopId:
           type: integer
+          description: Shop where stock is low
+          example: 1
         quantity:
           type: integer
+          description: Current stock quantity
+          example: 2
         productName:
           type: string
+          description: Product name
+          example: "MacBook Pro 16"
         reorderLevel:
           type: integer
+          description: Minimum stock level before alert
+          example: 5
+      required:
+        - productId
+        - shopId
+        - quantity
+        - productName
+        - reorderLevel
 
     CreateProductInput:
       type: object
@@ -1059,45 +1698,106 @@ components:
       properties:
         name:
           type: string
+          minLength: 1
+          maxLength: 100
+          description: Product name
+          example: "MacBook Pro 16"
         category:
           type: string
+          minLength: 1
+          maxLength: 50
+          description: Product category
+          example: "Electronics"
         unitPrice:
           type: number
+          format: decimal
+          minimum: 0.01
+          description: Unit price
+          example: 2499.99
         reorderLevel:
           type: integer
+          minimum: 0
+          description: Stock level for low stock alerts
+          example: 5
         inventories:
           type: array
+          minItems: 1
           items:
-            $ref: '#/components/schemas/Inventory'
+            type: object
+            required:
+              - shopId
+              - quantity
+            properties:
+              shopId:
+                type: integer
+                description: Shop ID
+                example: 1
+              quantity:
+                type: integer
+                minimum: 0
+                description: Initial stock quantity
+                example: 10
 
     UpdateProductInput:
       type: object
       properties:
         name:
           type: string
+          minLength: 1
+          maxLength: 100
+          description: Product name
+          example: "MacBook Pro 16 - Updated"
         category:
           type: string
+          minLength: 1
+          maxLength: 50
+          description: Product category
+          example: "Electronics"
         unitPrice:
           type: number
+          format: decimal
+          minimum: 0.01
+          description: Unit price
+          example: 2299.99
         reorderLevel:
           type: integer
+          minimum: 0
+          description: Stock level for low stock alerts
+          example: 10
         inventories:
           type: array
+          minItems: 1
           items:
-            $ref: '#/components/schemas/Inventory'
+            type: object
+            required:
+              - shopId
+              - quantity
+            properties:
+              shopId:
+                type: integer
+                description: Shop ID
+                example: 1
+              quantity:
+                type: integer
+                minimum: 0
+                description: Stock quantity
+                example: 25
 
     UpdateStockInput:
       type: object
       required:
-        - shopid
+        - shopId
         - newQuantity
       properties:
-        shopid:
+        shopId:
           type: integer
+          description: Shop ID where stock should be updated
+          example: 1
         newQuantity:
           type: integer
           minimum: 0
-          description: New absolute stock quantity for the specified shop. Must be non-negative.
+          description: New absolute stock quantity
+          example: 50
 
     # --------------------
     # Admin Schemas
@@ -1108,8 +1808,15 @@ components:
         id:
           type: string
           format: uuid
+          description: Unique admin identifier
+          example: "550e8400-e29b-41d4-a716-446655440000"
         username:
           type: string
+          description: Admin username
+          example: "john_doe"
+      required:
+        - id
+        - username
 
     CreateAdminInput:
       type: object
@@ -1119,21 +1826,33 @@ components:
       properties:
         username:
           type: string
+          minLength: 1
+          maxLength: 50
+          description: Admin username (must be unique)
+          example: "john_doe"
         password:
           type: string
           minLength: 6
+          description: Admin password (minimum 6 characters)
+          example: "SecurePass123!"
 
     UpdateAdminInput:
       type: object
       properties:
         username:
           type: string
+          minLength: 1
+          maxLength: 50
+          description: New username (optional)
+          example: "jane_doe"
         password:
           type: string
           minLength: 6
+          description: New password (optional, only updated if provided)
+          example: "NewSecurePass456!"
 
     # --------------------
-    # Customer Order Schemas
+    # Order Item Schemas
     # --------------------
     CustomerOrderItem:
       type: object
@@ -1141,117 +1860,246 @@ components:
         id:
           type: string
           format: uuid
+          description: Unique order item identifier
+          example: "550e8400-e29b-41d4-a716-446655440000"
         productId:
           type: string
           format: uuid
+          description: UUID of the product ordered
+          example: "660e8400-e29b-41d4-a716-446655440000"
         quantity:
           type: integer
+          minimum: 1
+          maximum: 1000000
+          description: Quantity ordered
+          example: 2
         unitPrice:
           type: number
-
-    CustomerOrder:
-      type: object
-      properties:
-        id:
-          type: string
-          format: uuid
-        orderDate:
-          type: string
-          format: date-time
-        totalAmount:
-          type: number
-        adminId:
-          type: string
-          format: uuid
-        items:
-          type: array
-          items:
-            $ref: '#/components/schemas/CustomerOrderItem'
-
-    CreateCustomerOrderItemInput:
-      type: object
+          format: decimal
+          minimum: 0.01
+          description: Unit price at time of order (historical)
+          example: 99.99
       required:
+        - id
         - productId
         - quantity
-      properties:
-        productId:
-          type: string
-          format: uuid
-        quantity:
-          type: integer
+        - unitPrice
 
-    CreateCustomerOrderInput:
-      type: object
-      required:
-        - orderDate
-        - adminId
-        - items
-      properties:
-        orderDate:
-          type: string
-          format: date-time
-        adminId:
-          type: string
-          format: uuid
-        items:
-          type: array
-          items:
-            $ref: '#/components/schemas/CreateCustomerOrderItemInput'
-
-    UpdateCustomerOrderInput:
-      type: object
-      properties:
-        orderDate:
-          type: string
-          format: date-time
-        adminId:
-          type: string
-          format: uuid
-        items:
-          type: array
-          items:
-            $ref: '#/components/schemas/CreateCustomerOrderItemInput'
-
-    # --------------------
-    # Purchase Order Schemas
-    # --------------------
     PurchaseOrderItem:
       type: object
       properties:
         id:
           type: string
           format: uuid
+          description: Unique order item identifier
+          example: "550e8400-e29b-41d4-a716-446655440000"
         productId:
           type: string
           format: uuid
+          description: UUID of the product ordered
+          example: "660e8400-e29b-41d4-a716-446655440000"
         quantity:
           type: integer
+          minimum: 1
+          maximum: 1000000
+          description: Quantity ordered
+          example: 10
         unitPrice:
           type: number
+          format: decimal
+          minimum: 0.01
+          description: Unit price at time of order (historical)
+          example: 50.00
+      required:
+        - id
+        - productId
+        - quantity
+        - unitPrice
 
+    # --------------------
+    # Customer Order Schemas
+    # --------------------
+    CustomerOrder:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Unique order identifier
+          example: "550e8400-e29b-41d4-a716-446655440000"
+        orderDate:
+          type: string
+          format: date-time
+          description: Order creation date
+          example: "2024-01-15T10:00:00Z"
+        totalAmount:
+          type: number
+          format: decimal
+          minimum: 0
+          description: Total order amount
+          example: 199.98
+        adminId:
+          type: string
+          format: uuid
+          nullable: true
+          description: UUID of the admin who created the order (null if admin deleted)
+          example: "770e8400-e29b-41d4-a716-446655440000"
+        shopId:
+          type: integer
+          description: Shop where order was placed
+          example: 1
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/CustomerOrderItem'
+          description: Items in the order
+      required:
+        - id
+        - orderDate
+        - totalAmount
+        - adminId
+        - shopId
+        - items
+
+    CreateCustomerOrderItemInput:
+      type: object
+      required:
+        - productId
+        - quantity
+        - unitPrice
+      properties:
+        productId:
+          type: string
+          format: uuid
+          description: UUID of the product to order
+          example: "660e8400-e29b-41d4-a716-446655440000"
+        quantity:
+          type: integer
+          minimum: 1
+          maximum: 1000000
+          description: Quantity to order
+          example: 2
+        unitPrice:
+          type: number
+          format: decimal
+          minimum: 0.01
+          description: Unit price at time of ordering (preserves historical price)
+          example: 99.99
+
+    CreateCustomerOrderInput:
+      type: object
+      required:
+        - orderDate
+        - adminId
+        - shopId
+        - items
+      properties:
+        orderDate:
+          type: string
+          format: date-time
+          description: Order date and time
+          example: "2024-01-15T10:00:00Z"
+        adminId:
+          type: string
+          format: uuid
+          description: UUID of the admin creating the order
+          example: "770e8400-e29b-41d4-a716-446655440000"
+        shopId:
+          type: integer
+          description: Shop ID where order is placed
+          example: 1
+        items:
+          type: array
+          minItems: 1
+          items:
+            $ref: '#/components/schemas/CreateCustomerOrderItemInput'
+          description: Items to include in the order
+
+    UpdateCustomerOrderInput:
+      type: object
+      required:
+        - orderDate
+        - adminId
+        - shopId
+        - items
+      properties:
+        orderDate:
+          type: string
+          format: date-time
+          description: Updated order date
+          example: "2024-01-15T10:00:00Z"
+        adminId:
+          type: string
+          format: uuid
+          description: Admin ID (for authorization verification)
+          example: "770e8400-e29b-41d4-a716-446655440000"
+        shopId:
+          type: integer
+          description: Shop ID (cannot be changed, used for validation)
+          example: 1
+        items:
+          type: array
+          minItems: 1
+          items:
+            $ref: '#/components/schemas/CreateCustomerOrderItemInput'
+          description: Updated items (replaces all existing items)
+
+    # --------------------
+    # Purchase Order Schemas
+    # --------------------
     PurchaseOrder:
       type: object
       properties:
         id:
           type: string
           format: uuid
+          description: Unique order identifier
+          example: "550e8400-e29b-41d4-a716-446655440000"
         orderDate:
           type: string
           format: date-time
+          description: Order creation date
+          example: "2024-01-15T10:00:00Z"
         totalAmount:
           type: number
+          format: decimal
+          minimum: 0
+          description: Total order amount
+          example: 500.00
         arrived:
           type: boolean
+          description: Whether the order has been received
+          example: false
         adminId:
           type: string
           format: uuid
+          nullable: true
+          description: UUID of the admin who created the order (null if admin deleted)
+          example: "770e8400-e29b-41d4-a716-446655440000"
         supplierId:
           type: string
           format: uuid
+          nullable: true
+          description: UUID of the supplier (null if supplier deleted)
+          example: "880e8400-e29b-41d4-a716-446655440000"
+        shopId:
+          type: integer
+          description: Shop where order will be received
+          example: 1
         items:
           type: array
           items:
             $ref: '#/components/schemas/PurchaseOrderItem'
+          description: Items in the order
+      required:
+        - id
+        - orderDate
+        - totalAmount
+        - arrived
+        - adminId
+        - supplierId
+        - shopId
+        - items
 
     CreatePurchaseOrderItemInput:
       type: object
@@ -1263,10 +2111,20 @@ components:
         productId:
           type: string
           format: uuid
+          description: UUID of the product to order
+          example: "660e8400-e29b-41d4-a716-446655440000"
         quantity:
           type: integer
+          minimum: 1
+          maximum: 1000000
+          description: Quantity to order
+          example: 10
         unitPrice:
           type: number
+          format: decimal
+          minimum: 0.01
+          description: Unit price at time of ordering (preserves historical price)
+          example: 50.00
 
     CreatePurchaseOrderInput:
       type: object
@@ -1275,42 +2133,83 @@ components:
         - arrived
         - adminId
         - supplierId
+        - shopId
         - items
       properties:
         orderDate:
           type: string
           format: date-time
+          description: Order date and time
+          example: "2024-01-15T10:00:00Z"
         arrived:
           type: boolean
+          description: |
+            Whether order has already arrived.
+            true: Inventory updated immediately
+            false: Order created, inventory updated later via PATCH
+          example: false
         adminId:
           type: string
           format: uuid
+          description: UUID of the admin creating the order
+          example: "770e8400-e29b-41d4-a716-446655440000"
         supplierId:
           type: string
           format: uuid
+          description: UUID of the supplier
+          example: "880e8400-e29b-41d4-a716-446655440000"
+        shopId:
+          type: integer
+          description: Shop ID where order will be received
+          example: 1
         items:
           type: array
+          minItems: 1
           items:
             $ref: '#/components/schemas/CreatePurchaseOrderItemInput'
+          description: Items to include in the order
 
     UpdatePurchaseOrderInput:
       type: object
+      required:
+        - orderDate
+        - arrived
+        - adminId
+        - supplierId
+        - shopId
+        - items
       properties:
         orderDate:
           type: string
           format: date-time
+          description: Updated order date
+          example: "2024-01-15T10:00:00Z"
         arrived:
           type: boolean
+          description: |
+            Updated arrival status.
+            Changing from false to true will update inventory immediately.
+          example: true
         adminId:
           type: string
           format: uuid
+          description: Admin ID (for authorization verification)
+          example: "770e8400-e29b-41d4-a716-446655440000"
         supplierId:
           type: string
           format: uuid
+          description: Supplier ID
+          example: "880e8400-e29b-41d4-a716-446655440000"
+        shopId:
+          type: integer
+          description: Shop ID (can be changed, inventory will be transferred)
+          example: 1
         items:
           type: array
+          minItems: 1
           items:
             $ref: '#/components/schemas/CreatePurchaseOrderItemInput'
+          description: Updated items (replaces all existing items)
 
     # --------------------
     # Supplier Schemas
@@ -1321,16 +2220,32 @@ components:
         id:
           type: string
           format: uuid
+          description: Unique supplier identifier
+          example: "550e8400-e29b-41d4-a716-446655440000"
         name:
           type: string
           nullable: true
+          description: Supplier name (optional)
+          example: "TechCorp Inc."
         contactEmail:
           type: string
           format: email
+          description: Primary contact email
+          example: "orders@techcorp.com"
         phone:
           type: string
+          description: Contact phone number
+          example: "+1-555-123-4567"
         address:
           type: string
+          description: Physical address
+          example: "123 Tech Street, Silicon Valley, CA 94025"
+      required:
+        - id
+        - name
+        - contactEmail
+        - phone
+        - address
 
     CreateSupplierInput:
       type: object
@@ -1342,13 +2257,23 @@ components:
         name:
           type: string
           nullable: true
+          description: Supplier name (optional)
+          example: "TechCorp Inc."
         contactEmail:
           type: string
           format: email
+          description: Primary contact email
+          example: "orders@techcorp.com"
         phone:
           type: string
+          minLength: 1
+          description: Contact phone number
+          example: "+1-555-123-4567"
         address:
           type: string
+          minLength: 1
+          description: Physical address
+          example: "123 Tech Street, Silicon Valley, CA 94025"
 
     UpdateSupplierInput:
       type: object
@@ -1356,10 +2281,20 @@ components:
         name:
           type: string
           nullable: true
+          description: Supplier name
+          example: "TechCorp Inc. - Updated"
         contactEmail:
           type: string
           format: email
+          description: Primary contact email
+          example: "neworders@techcorp.com"
         phone:
           type: string
+          minLength: 1
+          description: Contact phone number
+          example: "+1-555-987-6543"
         address:
           type: string
+          minLength: 1
+          description: Physical address
+          example: "456 New Street, Silicon Valley, CA 94025"
