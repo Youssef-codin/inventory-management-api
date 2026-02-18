@@ -19,10 +19,6 @@ describe('Product Module - Integration', () => {
         shopId = shop.id;
     });
 
-    afterAll(async () => {
-        await resetDb();
-    });
-
     describe('GET /product', () => {
         it('should return 200 and list of products', async () => {
             await prisma.product.create({
@@ -147,6 +143,23 @@ describe('Product Module - Integration', () => {
                 where: { productId_shopId: { productId: product.id, shopId } },
             });
             expect(inv?.quantity).toBe(10);
+        });
+
+        it('should return 404 for non-existent product', async () => {
+            const uuid = '00000000-0000-0000-0000-000000000000';
+            const response = await request(app)
+                .put(`/product/${uuid}`)
+                .set('Authorization', `Bearer ${authToken}`)
+                .send({
+                    name: 'Ghost',
+                    category: 'C',
+                    unitPrice: 10,
+                    reorderLevel: 5,
+                    inventories: [{ shopId, quantity: 5 }],
+                });
+
+            expect(response.status).toBe(404);
+            expect(response.body.error?.code).toBe('NOT_FOUND');
         });
     });
 

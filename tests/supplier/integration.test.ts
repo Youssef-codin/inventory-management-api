@@ -15,6 +15,23 @@ describe('Supplier Module - Integration', () => {
         authToken = getAuthToken(admin.id, admin.username);
     });
 
+    describe('GET /supplier', () => {
+        it('should return 200 and list of suppliers', async () => {
+            await prisma.supplier.createMany({
+                data: [
+                    { name: 'Sup1', contactEmail: 's1@test.com', phone: '1', address: 'A' },
+                    { name: 'Sup2', contactEmail: 's2@test.com', phone: '2', address: 'B' },
+                ],
+            });
+
+            const response = await request(app).get('/supplier').set('Authorization', `Bearer ${authToken}`);
+
+            expect(response.status).toBe(200);
+            expect(response.body.success).toBe(true);
+            expect(response.body.data).toHaveLength(2);
+        });
+    });
+
     describe('POST /supplier/', () => {
         it('should create supplier with valid data', async () => {
             const response = await request(app)
@@ -30,6 +47,66 @@ describe('Supplier Module - Integration', () => {
             expect(response.status).toBe(201);
             expect(response.body.success).toBe(true);
             expect(response.body.data.name).toBe('Test Supplier');
+        });
+    });
+
+    describe('GET /supplier/:id', () => {
+        it('should return 200 for existing supplier', async () => {
+            const supplier = await prisma.supplier.create({
+                data: { name: 'Test', contactEmail: 't@test.com', phone: '1', address: 'A' },
+            });
+
+            const response = await request(app)
+                .get(`/supplier/${supplier.id}`)
+                .set('Authorization', `Bearer ${authToken}`);
+
+            expect(response.status).toBe(200);
+            expect(response.body.data.id).toBe(supplier.id);
+        });
+
+        it('should return 404 for non-existent supplier', async () => {
+            const response = await request(app)
+                .get('/supplier/00000000-0000-0000-0000-000000000000')
+                .set('Authorization', `Bearer ${authToken}`);
+
+            expect(response.status).toBe(404);
+            expect(response.body.error?.code).toBe('NOT_FOUND');
+        });
+    });
+
+    describe('PUT /supplier/:id', () => {
+        it('should return 200 and update supplier', async () => {
+            const supplier = await prisma.supplier.create({
+                data: { name: 'Old', contactEmail: 'old@test.com', phone: '1', address: 'A' },
+            });
+
+            const response = await request(app)
+                .put(`/supplier/${supplier.id}`)
+                .set('Authorization', `Bearer ${authToken}`)
+                .send({
+                    name: 'New',
+                    contactEmail: 'new@test.com',
+                    phone: '2',
+                    address: 'B',
+                });
+
+            expect(response.status).toBe(200);
+            expect(response.body.data.name).toBe('New');
+        });
+
+        it('should return 404 for non-existent supplier', async () => {
+            const response = await request(app)
+                .put('/supplier/00000000-0000-0000-0000-000000000000')
+                .set('Authorization', `Bearer ${authToken}`)
+                .send({
+                    name: 'Ghost',
+                    contactEmail: 'ghost@test.com',
+                    phone: '1',
+                    address: 'A',
+                });
+
+            expect(response.status).toBe(404);
+            expect(response.body.error?.code).toBe('NOT_FOUND');
         });
     });
 

@@ -450,28 +450,6 @@ describe('Customer Order Module - Integration', () => {
             expect(response.body.data.updatedOrder.items[0].productId).toBe(prodB.id);
         });
 
-        it('should handle no authorization token', async () => {
-            const order = await prisma.customerOrder.create({
-                data: {
-                    adminId,
-                    shopId,
-                    totalAmount: 50,
-                    items: { create: { productId: prodA.id, quantity: 1, unitPrice: 50 } },
-                },
-            });
-
-            const response = await request(app)
-                .put(`/customer-order/${order.id}`)
-                .send({
-                    adminId,
-                    shopId,
-                    orderDate: new Date().toISOString(),
-                    items: [{ productId: prodA.id, quantity: 1 }],
-                });
-
-            expect(response.status).toBe(401);
-        });
-
         it('should handle quantity at exact stock level', async () => {
             const createResponse = await request(app)
                 .post('/customer-order/')
@@ -713,11 +691,6 @@ describe('Customer Order Module - Integration', () => {
             expect(response.body.data.items).toHaveLength(1);
             expect(Number(response.body.data.totalAmount)).toBe(100);
         });
-
-        it('should return 401 without auth token', async () => {
-            const response = await request(app).get('/customer-order/some-id');
-            expect(response.status).toBe(401);
-        });
     });
 
     describe('DELETE /customer-order/:id', () => {
@@ -777,25 +750,6 @@ describe('Customer Order Module - Integration', () => {
                 where: { productId_shopId: { productId: prodA.id, shopId } },
             });
             expect(invAfter?.quantity).toBe(10);
-        });
-
-        it('should return 401 without auth token', async () => {
-            const createResponse = await request(app)
-                .post('/customer-order/')
-                .set('Authorization', `Bearer ${authToken}`)
-                .send({
-                    adminId,
-                    shopId,
-                    orderDate: new Date().toISOString(),
-                    items: [{ productId: prodA.id, quantity: 1 }],
-                });
-
-            expect(createResponse.status).toBe(201);
-            const order = createResponse.body.data.order;
-
-            const response = await request(app).delete(`/customer-order/${order.id}`);
-
-            expect(response.status).toBe(401);
         });
     });
 

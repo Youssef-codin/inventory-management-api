@@ -3,7 +3,7 @@ import { beforeEach, describe, expect, it } from 'vitest';
 import app from '../../src/app';
 import { hashPassword } from '../../src/util/auth';
 import { prisma } from '../../src/util/prisma';
-import { createTestAdmin, resetDb } from '../helpers';
+import { createTestAdmin, getAuthToken, resetDb } from '../helpers';
 
 describe('Auth Module - Integration', () => {
     beforeEach(async () => {
@@ -64,6 +64,15 @@ describe('Auth Module - Integration', () => {
     });
 
     describe('Auth Middleware (Global)', () => {
+        let authToken: string;
+        let adminId: string;
+
+        beforeEach(async () => {
+            const admin = await createTestAdmin();
+            adminId = admin.id;
+            authToken = getAuthToken(admin.id, admin.username);
+        });
+
         it('should return 401 when requesting protected route without Authorization', async () => {
             const response = await request(app).get('/product');
             expect(response.body.success).toBe(false);
@@ -85,6 +94,40 @@ describe('Auth Module - Integration', () => {
 
             expect(response.body.error?.code).toBe('UNAUTHENTICATED');
             expect(response.status).toBe(401);
+        });
+
+        it('should return 401 when token is expired', async () => {
+            const jwt = await import('jsonwebtoken');
+            const expiredToken = jwt.sign({ id: adminId, username: 'test_admin' }, process.env.JWT_SECRET!, {
+                expiresIn: '0s',
+            });
+
+            // Wait a bit to ensure token is expired
+            await new Promise((resolve) => setTimeout(resolve, 100));
+
+            const response = await request(app)
+                .get('/product')
+                .set('Authorization', `Bearer ${expiredToken}`);
+
+            expect(response.status).toBe(401);
+            expect(response.body.error?.code).toBe('UNAUTHENTICATED');
+            expect(response.body.error?.message).toBe('Token expired');
+        });
+
+        it('should return 401 when token is malformed', async () => {
+            const response = await request(app)
+                .get('/product')
+                .set('Authorization', 'Bearer malformed-token-without-three-parts');
+
+            expect(response.status).toBe(401);
+            expect(response.body.error?.code).toBe('UNAUTHENTICATED');
+        });
+
+        it('should return 401 when token has only two parts', async () => {
+            const response = await request(app).get('/product').set('Authorization', 'Bearer header.payload');
+
+            expect(response.status).toBe(401);
+            expect(response.body.error?.code).toBe('UNAUTHENTICATED');
         });
     });
 });

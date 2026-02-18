@@ -97,7 +97,7 @@ describe('Admin Module - Integration', () => {
         it('should return 200 and list of admins', async () => {
             const response = await request(app).get('/admin').set('Authorization', `Bearer ${authToken}`);
             expect(response.status).toBe(200);
-            expect(response.body.data.length).toBeGreaterThanOrEqual(1);
+            expect(response.body.data.length).toBe(1);
         });
     });
 
@@ -134,6 +134,24 @@ describe('Admin Module - Integration', () => {
 
             const check = await prisma.admin.findUnique({ where: { id: newAdmin.id } });
             expect(check?.username).toBe('updated_user');
+        });
+
+        it('should hash password when updating', async () => {
+            const newAdmin = await prisma.admin.create({
+                data: { username: 'update_pass', passwordHash: 'old_hash' },
+            });
+
+            const response = await request(app)
+                .put(`/admin/${newAdmin.id}`)
+                .set('Authorization', `Bearer ${authToken}`)
+                .send({ username: 'update_pass', password: 'newpassword123' });
+
+            expect(response.status).toBe(200);
+            expect(response.body.data.username).toBe('update_pass');
+
+            const check = await prisma.admin.findUnique({ where: { id: newAdmin.id } });
+            expect(check?.passwordHash).not.toBe('old_hash');
+            expect(check?.passwordHash).not.toBe('newpassword123');
         });
 
         it('should return 404 for non-existent admin', async () => {
