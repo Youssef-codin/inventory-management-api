@@ -68,7 +68,6 @@ export async function getAllCustomerOrders() {
     });
 }
 
-//NOTE: O(N)
 export async function createCustomerOrder(requestingAdminId: string, data: CreateCustomerOrderInput) {
     if (requestingAdminId !== data.adminId)
         // check Token
@@ -79,6 +78,7 @@ export async function createCustomerOrder(requestingAdminId: string, data: Creat
         );
 
     const shop = await prisma.shop.findUnique({ where: { id: data.shopId } });
+
     if (!shop) {
         throw new AppError(404, 'Shop not found', ERROR_CODE.NOT_FOUND);
     }

@@ -1,0 +1,197 @@
+{
+    "root_group": {
+        "path": "",
+        "id": "d41d8cd98f00b204e9800998ecf8427e",
+        "groups": {
+            "setup": {
+                "path": "::setup",
+                "id": "5c0f8025f7e0b6654089e5b00e950f1a",
+                "groups": {},
+                "checks": {
+                        "login succeeded": {
+                            "id": "a7d4e67a461e12e148d0e432e39a2c96",
+                            "passes": 1,
+                            "fails": 0,
+                            "name": "login succeeded",
+                            "path": "::setup::login succeeded"
+                        }
+                    },
+                "name": "setup"
+            }
+        },
+        "checks": {
+            "GET /product 200": {
+                "passes": 11127,
+                "fails": 0,
+                "name": "GET /product 200",
+                "path": "::GET /product 200",
+                "id": "0c58aaa27a54b14050c67b025cb18518"
+            },
+            "GET /product/:id 200": {
+                "name": "GET /product/:id 200",
+                "path": "::GET /product/:id 200",
+                "id": "9511e21f27fe1b65119ac88f69e00376",
+                "passes": 2808,
+                "fails": 0
+            },
+            "GET /product/low-stock 200": {
+                "name": "GET /product/low-stock 200",
+                "path": "::GET /product/low-stock 200",
+                "id": "8d86406d119e2f0ffd34268b3c21ba91",
+                "passes": 5662,
+                "fails": 0
+            },
+            "GET /product/search 200": {
+                "name": "GET /product/search 200",
+                "path": "::GET /product/search 200",
+                "id": "a838c63e77c19030dc3f7eea8586b40b",
+                "passes": 4213,
+                "fails": 0
+            },
+            "POST /purchase-order 2xx": {
+                "passes": 1374,
+                "fails": 0,
+                "name": "POST /purchase-order 2xx",
+                "path": "::POST /purchase-order 2xx",
+                "id": "0535ea1024f313ba9e61712b56f493c9"
+            },
+            "POST /customer-order 2xx": {
+                "path": "::POST /customer-order 2xx",
+                "id": "92b2d0e05385137258b77699b79c432c",
+                "passes": 2843,
+                "fails": 0,
+                "name": "POST /customer-order 2xx"
+            }
+        },
+        "name": ""
+    },
+    "metrics": {
+        "http_req_duration{expected_response:true}": {
+            "min": 0.627828,
+            "med": 38.553467,
+            "max": 384.548713,
+            "p(90)": 122.78687810000005,
+            "p(95)": 164.1983948999999,
+            "avg": 51.051290923658236
+        },
+        "http_req_receiving": {
+            "med": 0.0468385,
+            "max": 3.599596,
+            "p(90)": 0.1029856,
+            "p(95)": 0.138669,
+            "avg": 0.0625531028467469,
+            "min": 0.010631
+        },
+        "http_reqs": {
+            "rate": 508.6401568751891,
+            "count": 28032
+        },
+        "http_req_connecting": {
+            "med": 0,
+            "max": 3.716985,
+            "p(90)": 0,
+            "p(95)": 0,
+            "avg": 0.0008205871503995434,
+            "min": 0
+        },
+        "http_req_tls_handshaking": {
+            "p(90)": 0,
+            "p(95)": 0,
+            "avg": 0,
+            "min": 0,
+            "med": 0,
+            "max": 0
+        },
+        "data_sent": {
+            "count": 10841654,
+            "rate": 196721.62497668812
+        },
+        "vus_max": {
+            "value": 100,
+            "min": 100,
+            "max": 100
+        },
+        "data_received": {
+            "rate": 639217.8761777503,
+            "count": 35228354
+        },
+        "http_req_blocked": {
+            "p(95)": 0.013934599999999978,
+            "avg": 0.0075514051797945176,
+            "min": 0.001102,
+            "med": 0.004427,
+            "max": 3.814818,
+            "p(90)": 0.010063900000000002
+        },
+        "iteration_duration": {
+            "med": 139.222078,
+            "max": 485.158305,
+            "p(90)": 223.77212300000002,
+            "p(95)": 264.8553955,
+            "avg": 151.7478739375237,
+            "min": 100.791022
+        },
+        "http_req_failed": {
+            "passes": 0,
+            "fails": 28032,
+            "thresholds": {
+                "rate<0.01": false
+            },
+            "value": 0
+        },
+        "http_req_sending": {
+            "min": 0.003182,
+            "med": 0.0148645,
+            "max": 4.205072,
+            "p(90)": 0.03443370000000002,
+            "p(95)": 0.04823504999999968,
+            "avg": 0.023161907569920263
+        },
+        "iterations": {
+            "count": 28027,
+            "rate": 508.5494319613629
+        },
+        "http_req_waiting": {
+            "avg": 50.96557591324193,
+            "min": 0.58644,
+            "med": 38.4575245,
+            "max": 384.431674,
+            "p(90)": 122.63432930000025,
+            "p(95)": 164.08801244999984
+        },
+        "checks": {
+            "passes": 28028,
+            "fails": 0,
+            "value": 1
+        },
+        "vus": {
+            "min": 2,
+            "max": 100,
+            "value": 2
+        },
+        "http_req_duration": {
+            "avg": 51.051290923658236,
+            "min": 0.627828,
+            "med": 38.553467,
+            "max": 384.548713,
+            "p(90)": 122.78687810000005,
+            "p(95)": 164.1983948999999,
+            "thresholds": {
+                "p(95)<500": false
+            }
+        }
+    },
+    "setup_data": {
+        "adminId": "63c3f2e8-32de-4d02-928c-cc8c4c0a0e65",
+        "productIds": [
+            "f7aa909a-adc3-415b-9a15-888183cc09d3",
+            "f2a494c1-3479-44ce-97f3-f8f44d4e6ce5",
+            "3c9725f2-04d3-45ad-af51-1bfbf005484a",
+            "1f9c4723-ecb7-4c1b-a340-7c6617b60697",
+            "eab2dc96-7088-4feb-8327-4973ad22191d"
+        ],
+        "shopId": 18662,
+        "supplierId": "7ffc0d1c-3b50-4587-839d-a90b3c5afdd9",
+        "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI2M2MzZjJlOC0zMmRlLTRkMDItOTI4Yy1jYzhjNGMwYTBlNjUiLCJuYW1lIjoiYWRtaW4iLCJpYXQiOjE3NzE0NTIyNDUsImV4cCI6MTc3MTQ1NTg0NX0.x6vrF3Gw2iEA0BLd3pbCK0d3h4UO0nY186Wbcv0tZWs"
+    }
+}
