@@ -1,8 +1,6 @@
 # Inventory Management API
 
-A robust, multi-tenant inventory management REST API built with Node.js, Express, TypeScript, and Prisma. The system supports multiple shops, each with independent inventory tracking, customer orders, and purchase orders.
-
-**Performance:** With Redis caching, the API handles 450+ req/s with sub-3ms average latency under 100 concurrent users (74% reduction in p95 latency).
+A robust, multi-tenant inventory management REST API built with Node.js, Express, TypeScript, and Prisma. The system supports multiple shops, each with independent inventory tracking, customer orders, and purchase orders. With Redis caching, p95 latency is reduced by 74%.
 
 ## Table of Contents
 
@@ -285,8 +283,7 @@ The full OpenAPI specification is available in the `docs/` directory:
 
 ## Scalability Considerations
 
-- **Redis caching** reduces database load and tail latency (~74% p95 improvement).
-- **Database indexed** on primary and foreign keys for fast lookups.
-- **Stateless API** with JWT auth enables horizontal scaling across multiple instances.
-- **Cache invalidation** on write operations ensures data consistency.
-- Tested to handle **450+ req/s** with **sub-3ms average latency** under **100 concurrent users**.
+- Redis caching reduces database load and tail latency (~74% p95 improvement).
+- Database indexed on primary and foreign keys for fast lookups.
+- Stateless API with JWT auth enables horizontal scaling.
+- Cache invalidation on write operations ensures data consistency.
