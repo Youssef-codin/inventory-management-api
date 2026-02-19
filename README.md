@@ -216,21 +216,21 @@ The full OpenAPI specification is available in the `docs/` directory:
 
 ## Benchmarks
 
-Load tested with [k6](https://k6.io/) using 100 VUs over 55 seconds (15s ramp-up → 30s steady → 10s ramp-down). Tests run locally with Docker.
+Load tested with [k6](https://k6.io/) using 100 VUs over 55 seconds (15s ramp-up → 30s steady → 10s ramp-down). Tests run locally with Docker against a dataset of 1000 products, 10 shops, and 50 suppliers.
 
 ### Redis Cache Performance Comparison
 
 | Metric                | Baseline     | With Redis   | Difference   |
 | --------------------- | ------------ | ------------ | ------------ |
-| **Avg Latency**       | 2.98 ms      | 1.02 ms      | **65.8% faster** |
-| **p95 Latency**       | 7.66 ms      | 1.92 ms      | **74.9% faster** |
-| **Throughput**        | 453.93 req/s | 457.17 req/s | **0.7% higher** |
-| **Total Requests**    | 25,030       | 25,214       | +184         |
-| **Passes**            | 25,025       | 25,209       | +184         |
+| **Avg Latency**       | 3.50 ms      | 1.06 ms      | **69.7% faster** |
+| **p95 Latency**       | 9.14 ms      | 2.37 ms      | **74.1% faster** |
+| **Throughput**        | 450.54 req/s | 454.33 req/s | **0.8% higher** |
+| **Total Requests**    | 24,848      | 25,071      | +223         |
+| **Passes**            | 24,843      | 25,066      | +223         |
 
 **Key Improvements:**
-- **65.8% reduction** in average response time (2.98ms → 1.02ms)
-- **74.9% reduction** in p95 latency (7.66ms → 1.92ms)
+- **69.7% reduction** in average response time (3.50ms → 1.06ms)
+- **74.1% reduction** in p95 latency (9.14ms → 2.37ms)
 
 **Cached Endpoints:**
 - `GET /product/:id` - Product lookups
