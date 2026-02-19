@@ -158,66 +158,6 @@ Load tested with [k6](https://k6.io/) using 100 VUs over 55 seconds (15s ramp-up
 
 Cache is automatically invalidated on create/update/delete operations.
 
-**Reproducing the Benchmarks:**
-```bash
-# 1. Seed the large dataset
-npm run seed:large
-
-# 2. Test WITHOUT Redis - comment out initRedis() in src/app.ts
-# Then start the server:
-docker compose up -d
-
-# 3. Run the baseline test (without Redis)
-k6 run --summary-export=docs/baseline.json tests/perf/cache-benchmark.test.js
-
-# 4. Test WITH Redis - uncomment initRedis() in src/app.ts
-# Then restart the server:
-docker compose restart
-
-# 5. Run the Redis test
-k6 run --summary-export=docs/redis.json tests/perf/cache-benchmark.test.js
-```
-
-## Authentication
-
-The API uses JWT (JSON Web Token) for authentication.
-
-1. **Login** by sending a `POST` request to `/auth/login` with your credentials:
-
-   ```json
-   {
-     "username": "admin_user",
-     "password": "securePassword123"
-   }
-   ```
-
-2. **Use the token** in subsequent requests via the `Authorization` header:
-
-   ```
-   Authorization: Bearer <your-jwt-token>
-   ```
-
-## Project Structure
-
-```text
-src/
-├── errors/              # Custom error classes (AppError)
-├── middleware/          # Express middleware (auth, logging, validation, error handling)
-├── modules/             # Feature modules (admin, auth, product, orders, etc.)
-│   └── [module]/        # Each module contains:
-│       ├── *.controller.ts  # HTTP request handlers
-│       ├── *.service.ts     # Business logic & DB operations
-│       ├── *.schema.ts      # Zod validation schemas
-│       └── *.router.ts      # Express routes
-├── scripts/             # Database seeding scripts
-├── util/                # Utilities (DB, Redis, auth, responses)
-├── app.ts               # Express app configuration
-└── server.ts            # Application entry point
-
-tests/
-└── [module]/            # Integration & unit tests per module
-```
-
 ## Testing
 
 Tests are organized per-module with both integration and unit tests:
@@ -232,16 +172,6 @@ npm run test:coverage
 
 ### Performance Testing
 
-Load tests are located in `tests/perf/` and require [k6](https://k6.io/) to be installed.
-
-```bash
-# Install k6 (macOS)
-brew install k6
-
-# Install k6 (Linux)
-sudo apt install k6
-```
-
 Run the performance tests:
 
 ```bash
@@ -255,6 +185,24 @@ k6 run tests/perf/cache-benchmark.test.js
 By default, tests connect to `http://localhost:3000`. Override with:
 ```bash
 k6 run tests/perf/load.test.js -e BASE_URL=http://your-server:3000
+```
+
+**Reproducing the benchmarks:**
+```bash
+# 1. Seed the large dataset
+npm run seed:large
+
+# 2. Test WITHOUT Redis - comment out initRedis() in src/app.ts, then start server:
+docker compose up -d
+
+# 3. Run the baseline test
+k6 run --summary-export=docs/baseline.json tests/perf/cache-benchmark.test.js
+
+# 4. Test WITH Redis - uncomment initRedis(), restart server:
+docker compose restart
+
+# 5. Run the Redis test
+k6 run --summary-export=docs/redis.json tests/perf/cache-benchmark.test.js
 ```
 
 To test without Redis caching, comment out the `initRedis()` call in `src/app.ts`.
