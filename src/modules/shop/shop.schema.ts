@@ -12,7 +12,10 @@ export const CreateShopSchema = BaseShopSchema.omit({
 });
 
 export const ShopIdSchema = z.object({
-    id: z.coerce.number().positive().int(),
+    id: z
+        .union([z.string(), z.number()])
+        .transform((x) => `${x}`)
+        .pipe(z.string()),
 });
 
 export const UpdateShopSchema = BaseShopSchema.omit({
