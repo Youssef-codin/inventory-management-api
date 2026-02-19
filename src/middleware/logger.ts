@@ -23,7 +23,7 @@ export const logger = pino({
     },
 });
 
-export default function log(req: Request, res: Response, next: NextFunction) {
+export default function log(req: Request, _res: Response, next: NextFunction) {
     logger.info({
         method: req.method,
         url: req.url,
