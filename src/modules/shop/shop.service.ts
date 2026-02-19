@@ -1,6 +1,7 @@
 import { AppError } from '../../errors/AppError';
 import { ERROR_CODE } from '../../middleware/errorHandler';
 import { prisma } from '../../util/prisma';
+import { cache } from '../../util/redis';
 import type { CreateShopInput, ShopIdInputNumber, UpdateShopInput } from './shop.schema';
 
 async function findShopById(id: ShopIdInputNumber['id']) {
@@ -12,10 +13,13 @@ async function findShopById(id: ShopIdInputNumber['id']) {
 }
 
 export async function getShopById(id: ShopIdInputNumber['id']) {
-    const shop = await findShopById(id);
+    const cached = await cache.shops.get(id);
+    if (cached) return cached;
 
+    const shop = await findShopById(id);
     if (!shop) throw new AppError(404, 'Shop not found', ERROR_CODE.NOT_FOUND);
 
+    await cache.shops.set(id, shop);
     return shop;
 }
 
@@ -34,12 +38,15 @@ export async function updateShop(id: ShopIdInputNumber['id'], data: UpdateShopIn
 
     if (!exists) throw new AppError(404, 'Shop not found', ERROR_CODE.NOT_FOUND);
 
-    return await prisma.shop.update({
+    const result = await prisma.shop.update({
         where: {
             id,
         },
         data,
     });
+
+    await cache.shops.del(id);
+    return result;
 }
 
 export async function deleteShop(id: ShopIdInputNumber['id']) {
@@ -53,5 +60,6 @@ export async function deleteShop(id: ShopIdInputNumber['id']) {
         },
     });
 
+    await cache.shops.del(id);
     return true;
 }

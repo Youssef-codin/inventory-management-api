@@ -1,6 +1,7 @@
 import { AppError } from '../../errors/AppError';
 import { ERROR_CODE } from '../../middleware/errorHandler';
 import { prisma } from '../../util/prisma';
+import { cache } from '../../util/redis';
 import type {
     CreateSupplierInput,
     GetSupplierByProductIdInput,
@@ -33,10 +34,13 @@ export async function getSuppliersByProduct(productId: GetSupplierByProductIdInp
 }
 
 export async function getSupplierById(id: SupplierIdInput['id']) {
-    const supplier = await findSupplierById(id);
+    const cached = await cache.suppliers.get(id);
+    if (cached) return cached;
 
+    const supplier = await findSupplierById(id);
     if (!supplier) throw new AppError(404, 'Supplier not found', ERROR_CODE.NOT_FOUND);
 
+    await cache.suppliers.set(id, supplier);
     return supplier;
 }
 
@@ -55,12 +59,15 @@ export async function updateSupplier(id: SupplierIdInput['id'], data: UpdateSupp
 
     if (!exists) throw new AppError(404, 'Supplier not found', ERROR_CODE.NOT_FOUND);
 
-    return await prisma.supplier.update({
+    const result = await prisma.supplier.update({
         where: {
             id,
         },
         data,
     });
+
+    await cache.suppliers.del(id);
+    return result;
 }
 
 export async function deleteSupplier(id: SupplierIdInput['id']) {
@@ -74,5 +81,6 @@ export async function deleteSupplier(id: SupplierIdInput['id']) {
         },
     });
 
+    await cache.suppliers.del(id);
     return true;
 }

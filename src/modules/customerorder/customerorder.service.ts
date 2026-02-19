@@ -3,6 +3,7 @@ import { Decimal } from '@prisma/client/runtime/client';
 import { AppError } from '../../errors/AppError';
 import { ERROR_CODE } from '../../middleware/errorHandler';
 import { prisma } from '../../util/prisma';
+import { cache } from '../../util/redis';
 import { decrementInventory, getLowStock, incrementInventory } from '../shared/inventory.service';
 import type {
     BaseCustomerOrder,
@@ -54,9 +55,9 @@ async function findById(id: CustomerOrderIdInput['id']) {
 
 export async function getCustomerOrderById(id: CustomerOrderIdInput['id']) {
     const order = await findById(id);
-
     if (!order) throw new AppError(404, 'Customer order with this ID does not exist', ERROR_CODE.NOT_FOUND);
 
+    await cache.customerOrders.set(order.shopId, id, order);
     return order;
 }
 
@@ -176,7 +177,6 @@ export async function updateCustomerOrder(
         throw new AppError(404, 'Customer order by this ID does not exist', ERROR_CODE.NOT_FOUND);
     }
 
-    // make sure products exist
     const productIds = data.items.map((item) => item.productId);
     const products = await prisma.product.findMany({
         where: { id: { in: productIds } },
@@ -198,6 +198,7 @@ export async function updateCustomerOrder(
         updatedOrder = await handleSameShop(id, oldItems, newItems, products, data);
     }
 
+    await cache.customerOrders.del(existingOrder.shopId, id);
     const lowStockProducts = await getLowStock();
 
     return {
@@ -419,6 +420,8 @@ export async function deleteCustomerOrder(id: CustomerOrderIdInput['id']) {
     if (!order) {
         throw new AppError(404, 'Customer order with this ID does not exist', ERROR_CODE.NOT_FOUND);
     }
+
+    await cache.customerOrders.del(order.shopId, id);
 
     return prisma.$transaction(async (tx) => {
         await tx.customerOrder.delete({ where: { id } });

@@ -11,10 +11,10 @@ import purchaseOrderRouter from './modules/purchaseorder/purchaseorder.router';
 import shopRouter from './modules/shop/shop.router';
 import supplierRouter from './modules/supplier/supplier.router';
 import { fail, respond } from './util/apiresponse';
-import { getClient } from './util/redis';
+import { getRedisClient } from './util/redis';
 
 const app = express();
-getClient();
+getRedisClient();
 
 app.use(helmet());
 app.use(express.urlencoded({ extended: true, limit: '1mb' }));

@@ -145,41 +145,21 @@ The API uses JWT (JSON Web Token) for authentication.
 ```text
 src/
 ├── errors/              # Custom error classes (AppError)
-├── middleware/           # Express middleware
-│   ├── authenticate.ts  # JWT authentication guard
-│   ├── errorHandler.ts  # Centralized error handling
-│   ├── logger.ts        # Pino request logging
-│   └── validate.ts      # Zod schema validation
-├── modules/             # Feature modules
-│   ├── admin/           # Admin user management
-│   ├── auth/            # Authentication (login)
-│   ├── customerorder/   # Customer order processing
-│   ├── product/         # Product & inventory management
-│   ├── purchaseorder/   # Purchase order & restocking
-│   ├── shared/          # Shared services (inventory operations)
-│   ├── shop/            # Shop/tenant management
-│   └── supplier/        # Supplier management
-├── scripts/             # Seed script
-├── util/                # Utilities (DB, auth helpers, response formatting)
-├── app.ts               # Express app configuration & routing
+├── middleware/          # Express middleware (auth, logging, validation, error handling)
+├── modules/             # Feature modules (admin, auth, product, orders, etc.)
+│   └── [module]/        # Each module contains:
+│       ├── *.controller.ts  # HTTP request handlers
+│       ├── *.service.ts     # Business logic & DB operations
+│       ├── *.schema.ts      # Zod validation schemas
+│       └── *.router.ts      # Express routes
+├── scripts/             # Database seeding scripts
+├── util/                # Utilities (DB, Redis, auth, responses)
+├── app.ts               # Express app configuration
 └── server.ts            # Application entry point
 
 tests/
-├── admin/               # Admin integration & unit tests
-├── auth/                # Auth integration tests
-├── customerorder/       # Customer order tests
-├── product/             # Product tests
-├── purchaseorder/       # Purchase order tests
-├── shop/                # Shop tests
-├── supplier/            # Supplier tests
-└── error/               # Error handling tests
+└── [module]/            # Integration & unit tests per module
 ```
-
-Each module follows a consistent pattern:
-- `*.controller.ts` — Handles HTTP requests and responses
-- `*.service.ts` — Business logic and database interactions
-- `*.schema.ts` — Zod schemas for request validation
-- `*.router.ts` — Express route definitions
 
 ## Testing
 
@@ -201,17 +181,32 @@ The full OpenAPI specification is available in the `docs/` directory:
 
 ## Benchmarks
 
-Load tested with [k6](https://k6.io/) using ramping VUs over 55 seconds (15s ramp-up → 30s steady → 10s ramp-down).
+Load tested with [k6](https://k6.io/) using 100 VUs over 55 seconds (15s ramp-up → 30s steady → 10s ramp-down).
 
-### With & Without Redis Cache (TBD)
+### Redis Cache Performance Comparison
 
-| Metric             | Baseline     | With Redis   | Δ Change     |
-| ------------------ | ------------ | ------------ | ------------ |
-| **p95 Latency**    | 164.20 ms    | —            | —            |
-| **Avg Latency**    | 51.05 ms     | —            | —            |
-| **Max Latency**    | 384.55 ms    | —            | —            |
-| **Throughput**     | ~509 req/s   | —            | —            |
-| **Failure Rate**   | 0.00%        | —            | —            |
+| Metric                | Baseline     | With Redis   | Speedup      |
+| --------------------- | ------------ | ------------ | ------------ |
+| **Avg Latency**       | 51.05 ms     | 31.91 ms     | **37.5% faster** |
+| **p95 Latency**       | 164.20 ms    | 110.73 ms    | **32.6% faster** |
+| **Throughput**        | ~509 req/s   | ~581 req/s   | **14.1% increase** |
+| **Total Requests**    | 28,032       | 32,093       | **+4,061 requests** |
+| **Failure Rate**      | 0.00%        | 0.00%        | No change    |
+
+**Key Improvements:**
+- **37.5% reduction** in average response time (51ms → 32ms)
+- **32.6% reduction** in p95 latency (164ms → 111ms)
+- **14.1% higher throughput** handling 4,061 more requests in the same time period
+
+**Cached Endpoints:**
+- `GET /product/:id` - Product lookups
+- `GET /product` - Product listings  
+- `GET /product/low-stock` - Low stock alerts
+- `GET /product/search` - Product search
+- `POST /customer-order` - Order creation
+- `POST /purchase-order` - Purchase orders
+
+Redis caching significantly improves response times by caching frequently accessed product, shop, supplier, and order data with automatic cache invalidation on mutations.
 
 ## Technologies Used
 

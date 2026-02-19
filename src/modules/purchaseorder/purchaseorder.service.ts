@@ -3,6 +3,7 @@ import { Decimal } from '@prisma/client/runtime/client';
 import { AppError } from '../../errors/AppError';
 import { ERROR_CODE } from '../../middleware/errorHandler';
 import { prisma } from '../../util/prisma';
+import { cache } from '../../util/redis';
 import { decrementInventory, getLowStock, incrementInventory } from '../shared/inventory.service';
 import type {
     CreatePurchaseOrderInput,
@@ -55,9 +56,9 @@ async function findById(id: PurchaseOrderIdInput['id']) {
 
 export async function getPurchaseOrderById(id: PurchaseOrderIdInput['id']) {
     const order = await findById(id);
-
     if (!order) throw new AppError(404, 'Order not found with this id', ERROR_CODE.NOT_FOUND);
 
+    await cache.purchaseOrders.set(order.shopId, id, order);
     return order;
 }
 
@@ -208,6 +209,7 @@ export async function updatePurchaseOrder(
         updatedOrder = await handleNotArrived(id, newItems, data);
     }
 
+    await cache.purchaseOrders.del(existingOrder.shopId, id);
     const lowStockProducts = await getLowStock();
 
     return {
@@ -544,6 +546,8 @@ export async function orderArrived(id: PurchaseOrderIdInput['id']) {
         }
     }
 
+    await cache.purchaseOrders.del(exisitingOrder.shopId, id);
+
     return await prisma.$transaction(async (tx) => {
         const order = await tx.purchaseOrder.update({
             where: {
@@ -573,6 +577,8 @@ export async function deletePurchaseOrder(id: PurchaseOrderIdInput['id']) {
     const order = await findById(id);
 
     if (!order) throw new AppError(404, 'Order not found with this id', ERROR_CODE.NOT_FOUND);
+
+    await cache.purchaseOrders.del(order.shopId, id);
 
     await prisma.purchaseOrder.delete({
         where: {

@@ -1,6 +1,7 @@
 import { AppError } from '../../errors/AppError';
 import { ERROR_CODE } from '../../middleware/errorHandler';
 import { prisma } from '../../util/prisma';
+import { cache } from '../../util/redis';
 import { getLowStock } from '../shared/inventory.service';
 import type {
     CreateProductInput,
@@ -18,12 +19,15 @@ async function findProductById(id: ProductIdInput['id']) {
 }
 
 export async function getProductById(id: ProductIdInput['id']) {
-    const productToRtrn = await findProductById(id);
+    const cached = await cache.products.get(id);
+    if (cached) return cached;
 
+    const productToRtrn = await findProductById(id);
     if (!productToRtrn) {
         throw new AppError(404, 'Product with such ID not found', ERROR_CODE.NOT_FOUND);
     }
 
+    await cache.products.set(id, productToRtrn);
     return productToRtrn;
 }
 
@@ -73,7 +77,7 @@ export async function updateProduct(id: ProductIdInput['id'], data: UpdateProduc
         throw new AppError(404, 'Product with such ID not found', ERROR_CODE.NOT_FOUND);
     }
 
-    return await prisma.$transaction(async (tx) => {
+    const result = await prisma.$transaction(async (tx) => {
         await tx.inventory.deleteMany({
             where: { productId: id },
         });
@@ -96,6 +100,9 @@ export async function updateProduct(id: ProductIdInput['id'], data: UpdateProduc
             include: { inventories: true },
         });
     });
+
+    await cache.products.del(id);
+    return result;
 }
 
 export async function patchProductStock(
@@ -118,8 +125,13 @@ export async function patchProductStock(
         },
     });
 
+    let result: {
+        productId: string;
+        shopId: number;
+        quantity: number;
+    };
     if (existingInventory) {
-        return await prisma.inventory.update({
+        result = await prisma.inventory.update({
             where: {
                 productId_shopId: {
                     productId,
@@ -127,18 +139,21 @@ export async function patchProductStock(
                 },
             },
             data: {
-                quantity: newQuantity < 0 ? 0 : newQuantity, // extra safeguard against negative quantity
+                quantity: newQuantity < 0 ? 0 : newQuantity,
+            },
+        });
+    } else {
+        result = await prisma.inventory.create({
+            data: {
+                productId,
+                shopId,
+                quantity: newQuantity,
             },
         });
     }
 
-    return await prisma.inventory.create({
-        data: {
-            productId,
-            shopId,
-            quantity: newQuantity,
-        },
-    });
+    await cache.products.del(productId);
+    return result;
 }
 
 export async function deleteProduct(id: ProductIdInput['id']) {
@@ -154,5 +169,6 @@ export async function deleteProduct(id: ProductIdInput['id']) {
         },
     });
 
+    await cache.products.del(id);
     return true;
 }
