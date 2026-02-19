@@ -57,7 +57,8 @@ The quickest way to run the project is with Docker.
    | -------------- | ---------------------------------- | -------------------------------------------------------------------------- |
    | `PORT`         | Port the server listens on         | `3000`                                                                     |
    | `DATABASE_URL` | PostgreSQL connection string       | `postgresql://yourUser:yourPassword@localhost:5432/inventory_db?schema=public` |
-   | `JWT_SECRET`   | Secret key for signing JWT tokens  | `your-secret-key`                                                          |
+   | `JWT_SECRET`   | Secret key for signing JWT tokens | `your-secret-key`                                                          |
+   | `REDIS_URL`    | Redis connection string            | `redis://:yourPassword@localhost:6380`                                     |
 
 3. **Start the containers:**
 
@@ -125,7 +126,35 @@ If you prefer to run without Docker, make sure you have Node.js and PostgreSQL i
 | `npm run lint`          | Lint and format the codebase using Biome                                 |
 | `npm run lint:fix`      | Automatically fix linting and formatting issues                          |
 
+## Benchmarks
 
+Load tested with [k6](https://k6.io/) using 100 VUs over 55 seconds (15s ramp-up → 30s steady → 10s ramp-down). Tests run locally with Docker against a dataset of 1000 products, 10 shops, and 50 suppliers.
+
+### Redis Cache Performance Comparison
+
+| Metric                | Without Redis | With Redis   | Difference   |
+| --------------------- | ------------ | ------------ | ------------ |
+| **Avg Latency**       | 3.50 ms      | 1.06 ms      | **69.7% faster** |
+| **p95 Latency**       | 9.14 ms      | 2.37 ms      | **74.1% faster** |
+| **Throughput**        | 450.54 req/s | 454.33 req/s | **0.8% higher** |
+| **Total Requests**    | 24,848      | 25,071      | +223         |
+| **Passes**            | 24,843      | 25,066      | +223         |
+
+**Key Improvements:**
+- **69.7% reduction** in average response time (3.50ms → 1.06ms)
+- **74.1% reduction** in p95 latency (9.14ms → 2.37ms)
+
+**Cached Endpoints:**
+- `GET /product/:id` - Product lookups
+- `GET /product` - Product listings  
+- `GET /product/low-stock` - Low stock alerts
+- `GET /product/search` - Product search
+- `GET /shop/:id` - Shop lookups
+- `GET /supplier/:id` - Supplier lookups
+- `GET /customer-order/:id` - Customer order lookups
+- `GET /purchase-order/:id` - Purchase order lookups
+
+Cache is automatically invalidated on create/update/delete operations.
 
 ## Authentication
 
@@ -213,34 +242,6 @@ To test without Redis caching, comment out the `initRedis()` call in `src/app.ts
 The full OpenAPI specification is available in the `docs/` directory:
 
 - [OpenAPI Specification](docs/openapi.yaml) — Use with Swagger UI or Postman to explore all endpoints.
-
-## Benchmarks
-
-Load tested with [k6](https://k6.io/) using 100 VUs over 55 seconds (15s ramp-up → 30s steady → 10s ramp-down). Tests run locally with Docker against a dataset of 1000 products, 10 shops, and 50 suppliers.
-
-### Redis Cache Performance Comparison
-
-| Metric                | Baseline     | With Redis   | Difference   |
-| --------------------- | ------------ | ------------ | ------------ |
-| **Avg Latency**       | 3.50 ms      | 1.06 ms      | **69.7% faster** |
-| **p95 Latency**       | 9.14 ms      | 2.37 ms      | **74.1% faster** |
-| **Throughput**        | 450.54 req/s | 454.33 req/s | **0.8% higher** |
-| **Total Requests**    | 24,848      | 25,071      | +223         |
-| **Passes**            | 24,843      | 25,066      | +223         |
-
-**Key Improvements:**
-- **69.7% reduction** in average response time (3.50ms → 1.06ms)
-- **74.1% reduction** in p95 latency (9.14ms → 2.37ms)
-
-**Cached Endpoints:**
-- `GET /product/:id` - Product lookups
-- `GET /product` - Product listings  
-- `GET /product/low-stock` - Low stock alerts
-- `GET /product/search` - Product search
-- `POST /customer-order` - Order creation
-- `POST /purchase-order` - Purchase orders
-
-Redis caching significantly improves response times by caching frequently accessed product, shop, supplier, and order data with automatic cache invalidation on mutations.
 
 ## Technologies Used
 
