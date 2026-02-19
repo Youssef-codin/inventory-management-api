@@ -12,6 +12,7 @@
         "gen": "npx prisma generate",
         "generate": "npx prisma generate",
         "seed": "tsx --env-file .env src/scripts/seed.ts",
+        "seed:large": "tsx --env-file .env src/scripts/seed-large.ts",
         "test": "vitest",
         "test:coverage": "vitest --coverage",
         "lint": "biome check src",

@@ -2,9 +2,9 @@
 
 ## Priority
 
-- [ ] use redis and cache shop list
-- [ ] Add performance tests
-- [ ] Add 1k rows
+- [x] Add 1k rows
+- [x] Add performance tests
+- [x] use redis and cache
 - [x] update readme.md
 - [x] possible n+1 problem? probably but shouldn't be too big of a deal
 - [x] check bought Items is from the same Shop

@@ -28,6 +28,7 @@ A robust, multi-tenant inventory management REST API built with Node.js, Express
 - **Comprehensive Testing**: Integration and unit tests with Vitest and Supertest.
 - **Structured Logging**: Request logging with Pino.
 - **Code Quality**: Linting and formatting with Biome.
+- **Performance Testing**: Load testing with k6.
 
 ## Prerequisites
 
@@ -90,11 +91,15 @@ If you prefer to run without Docker, make sure you have Node.js and PostgreSQL i
    npm run generate
    ```
 
-3. **Seed the Database (optional):**
+ 3. **Seed the Database (optional):**
    Populate the database with demo data (admin user, shops, suppliers, products, orders):
 
    ```bash
+   # Small dataset (~5 products, 2 shops, 2 suppliers)
    npm run seed
+
+   # Large dataset (~1000 products, 10 shops, 50 suppliers, 150 orders) - for load testing
+   npm run seed:large
    ```
 
 4. **Run the Application:**
@@ -112,7 +117,8 @@ If you prefer to run without Docker, make sure you have Node.js and PostgreSQL i
 | `npm run type-check`    | Run the TypeScript compiler to check for type errors                     |
 | `npm run migrate <name>`| Run Prisma migrations with a descriptive name                            |
 | `npm run generate`      | Generate the Prisma Client from `schema.prisma`                          |
-| `npm run seed`          | Clear the database and seed it with demo data                            |
+| `npm run seed`          | Clear the database and seed it with demo data (~5 products)             |
+| `npm run seed:large`    | Clear the database and seed it with large dataset (~1000 products)       |
 | `npm run studio`        | Open Prisma Studio, a visual database editor                             |
 | `npm test`              | Run integration and unit tests with Vitest                               |
 | `npm run test:coverage` | Run tests and generate a code coverage report                            |
@@ -173,6 +179,35 @@ npm test
 npm run test:coverage
 ```
 
+### Performance Testing
+
+Load tests are located in `tests/perf/` and require [k6](https://k6.io/) to be installed.
+
+```bash
+# Install k6 (macOS)
+brew install k6
+
+# Install k6 (Linux)
+sudo apt install k6
+```
+
+Run the performance tests:
+
+```bash
+# Test full system (includes list, search, create operations)
+k6 run tests/perf/load.test.js
+
+# Test cached endpoints only
+k6 run tests/perf/cache-benchmark.test.js
+```
+
+By default, tests connect to `http://localhost:3000`. Override with:
+```bash
+k6 run tests/perf/load.test.js -e BASE_URL=http://your-server:3000
+```
+
+To test without Redis caching, comment out the `initRedis()` call in `src/app.ts`.
+
 ## API Documentation
 
 The full OpenAPI specification is available in the `docs/` directory:
@@ -181,22 +216,21 @@ The full OpenAPI specification is available in the `docs/` directory:
 
 ## Benchmarks
 
-Load tested with [k6](https://k6.io/) using 100 VUs over 55 seconds (15s ramp-up → 30s steady → 10s ramp-down).
+Load tested with [k6](https://k6.io/) using 100 VUs over 55 seconds (15s ramp-up → 30s steady → 10s ramp-down). Tests run locally with Docker.
 
 ### Redis Cache Performance Comparison
 
-| Metric                | Baseline     | With Redis   | Speedup      |
+| Metric                | Baseline     | With Redis   | Difference   |
 | --------------------- | ------------ | ------------ | ------------ |
-| **Avg Latency**       | 51.05 ms     | 31.91 ms     | **37.5% faster** |
-| **p95 Latency**       | 164.20 ms    | 110.73 ms    | **32.6% faster** |
-| **Throughput**        | ~509 req/s   | ~581 req/s   | **14.1% increase** |
-| **Total Requests**    | 28,032       | 32,093       | **+4,061 requests** |
-| **Failure Rate**      | 0.00%        | 0.00%        | No change    |
+| **Avg Latency**       | 2.98 ms      | 1.02 ms      | **65.8% faster** |
+| **p95 Latency**       | 7.66 ms      | 1.92 ms      | **74.9% faster** |
+| **Throughput**        | 453.93 req/s | 457.17 req/s | **0.7% higher** |
+| **Total Requests**    | 25,030       | 25,214       | +184         |
+| **Passes**            | 25,025       | 25,209       | +184         |
 
 **Key Improvements:**
-- **37.5% reduction** in average response time (51ms → 32ms)
-- **32.6% reduction** in p95 latency (164ms → 111ms)
-- **14.1% higher throughput** handling 4,061 more requests in the same time period
+- **65.8% reduction** in average response time (2.98ms → 1.02ms)
+- **74.9% reduction** in p95 latency (7.66ms → 1.92ms)
 
 **Cached Endpoints:**
 - `GET /product/:id` - Product lookups
@@ -220,6 +254,6 @@ Redis caching significantly improves response times by caching frequently access
 | **Validation**  | Zod                |
 | **Auth**        | JSON Web Tokens    |
 | **Logging**     | Pino               |
-| **Testing**     | Vitest, Supertest  |
+| **Testing**     | Vitest, Supertest, k6  |
 | **Linting**     | Biome              |
 | **Containers**  | Docker             |

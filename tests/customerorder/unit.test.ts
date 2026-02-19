@@ -1,3 +1,4 @@
+import { Decimal } from '@prisma/client/runtime/client';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { ERROR_CODE } from '../../src/middleware/errorHandler';
 import * as service from '../../src/modules/customerorder/customerorder.service';
@@ -33,7 +34,7 @@ describe('Customer Order Module - Unit', () => {
                     adminId: otherAdminId,
                     shopId: mockShopId,
                     orderDate: mockOrderDate,
-                    items: [{ productId: mockProductId, quantity: 1, unitPrice: 50 }],
+                    items: [{ productId: mockProductId, quantity: 1, unitPrice: new Decimal(50) }],
                 }),
             ).rejects.toMatchObject({
                 status: 403,
@@ -49,7 +50,7 @@ describe('Customer Order Module - Unit', () => {
                     adminId: mockAdminId,
                     shopId: 99999,
                     orderDate: mockOrderDate,
-                    items: [{ productId: mockProductId, quantity: 1, unitPrice: 50 }],
+                    items: [{ productId: mockProductId, quantity: 1, unitPrice: new Decimal(50) }],
                 }),
             ).rejects.toMatchObject({
                 status: 404,
@@ -67,7 +68,7 @@ describe('Customer Order Module - Unit', () => {
                     adminId: otherAdminId,
                     shopId: mockShopId,
                     orderDate: mockOrderDate,
-                    items: [{ productId: mockProductId, quantity: 1, unitPrice: 50 }],
+                    items: [{ productId: mockProductId, quantity: 1, unitPrice: new Decimal(50) }],
                 }),
             ).rejects.toMatchObject({
                 status: 403,
@@ -83,7 +84,7 @@ describe('Customer Order Module - Unit', () => {
                     adminId: mockAdminId,
                     shopId: mockShopId,
                     orderDate: mockOrderDate,
-                    items: [{ productId: mockProductId, quantity: 1, unitPrice: 50 }],
+                    items: [{ productId: mockProductId, quantity: 1, unitPrice: new Decimal(50) }],
                 }),
             ).rejects.toMatchObject({
                 status: 404,

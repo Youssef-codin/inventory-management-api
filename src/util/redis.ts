@@ -5,7 +5,7 @@ let client: RedisClientType | null = null;
 
 export async function initRedis() {
     if (!client) {
-        client = createClient({ url: process.env.REDIS_URL });
+        client = createClient({ url: process.env.REDIS_URL, socket: { connectTimeout: 2000 } });
         client.on('connect', () => logger.info('Redis connected'));
         client.on('error', () => logger.error("can't connect to redis"));
         await client.connect();

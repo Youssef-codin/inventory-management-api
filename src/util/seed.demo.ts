@@ -129,3 +129,177 @@ export async function seedDemo() {
     console.log('Demo seed complete.');
 }
 
+const CATEGORIES = [
+    'Electronics',
+    'Furniture',
+    'Accessories',
+    'Office Supplies',
+    'Software',
+    'Peripherals',
+    'Storage',
+    'Networking',
+];
+const PRODUCT_PREFIXES = [
+    'Laptop',
+    'Desktop',
+    'Monitor',
+    'Keyboard',
+    'Mouse',
+    'Headset',
+    'Webcam',
+    'Speaker',
+    'Printer',
+    'Scanner',
+    'Router',
+    'Switch',
+    'Cable',
+    'Adapter',
+    'Dock',
+    'Hub',
+    'Drive',
+    'SSD',
+    'HDD',
+    'RAM',
+];
+const PRODUCT_SUFFIXES = [
+    'Pro',
+    'Plus',
+    'Ultra',
+    'Max',
+    'Mini',
+    'Lite',
+    'Standard',
+    'Premium',
+    'Basic',
+    'Advanced',
+];
+
+function randomElement<T>(arr: T[]): T {
+    return arr[Math.floor(Math.random() * arr.length)];
+}
+
+function randomBetween(min: number, max: number): number {
+    return Math.floor(Math.random() * (max - min + 1)) + min;
+}
+
+function generateProductName(): string {
+    const prefix = randomElement(PRODUCT_PREFIXES);
+    const suffix = randomElement(PRODUCT_SUFFIXES);
+    const num = randomBetween(1, 9999);
+    return `${prefix} ${suffix} ${num}`;
+}
+
+export async function seedLarge() {
+    console.log('Clearing database...');
+    await prisma.purchaseOrderItem.deleteMany();
+    await prisma.customerOrderItem.deleteMany();
+    await prisma.purchaseOrder.deleteMany();
+    await prisma.customerOrder.deleteMany();
+    await prisma.inventory.deleteMany();
+    await prisma.product.deleteMany();
+    await prisma.supplier.deleteMany();
+    await prisma.admin.deleteMany();
+    await prisma.shop.deleteMany();
+    console.log('Database cleared.');
+
+    console.log('Seeding 10 shops...');
+    const shops = [];
+    for (let i = 1; i <= 10; i++) {
+        shops.push(
+            await createShop({
+                name: `Store ${i}`,
+                address: `${randomBetween(1, 999)} Main St, City ${i}, State ${String.fromCharCode(65 + (i % 26))}`,
+            }),
+        );
+    }
+
+    console.log('Seeding admin...');
+    const admin = await createAdmin({
+        username: 'admin',
+        password: 'admin',
+    });
+
+    console.log('Seeding 50 suppliers...');
+    const suppliers = [];
+    for (let i = 1; i <= 50; i++) {
+        suppliers.push(
+            await createSupplier({
+                name: `Supplier ${i} Inc.`,
+                contactEmail: `contact${i}@supplier.com`,
+                phone: `555-${String(i).padStart(4, '0')}`,
+                address: `${randomBetween(1, 999)} Industrial Blvd, City ${i}`,
+            }),
+        );
+    }
+
+    console.log('Seeding 1000 products...');
+    const products = [];
+    for (let i = 1; i <= 1000; i++) {
+        const product = await createProduct({
+            name: generateProductName(),
+            category: randomElement(CATEGORIES),
+            unitPrice: new Decimal(randomBetween(5, 5000) + Math.random()),
+            reorderLevel: randomBetween(5, 50),
+            inventories: shops.map((shop) => ({
+                shopId: shop.id,
+                quantity: randomBetween(1, 500),
+            })),
+        });
+        products.push(product);
+        if (i % 100 === 0) console.log(`  Created ${i}/1000 products...`);
+    }
+
+    console.log('Seeding purchase orders...');
+    for (let i = 0; i < 50; i++) {
+        const shop = shops[i % shops.length];
+        const supplier = suppliers[i % suppliers.length];
+        const startIdx = (i * 11) % products.length;
+        const items = [];
+        const itemCount = Math.min(randomBetween(1, 5), products.length);
+        for (let j = 0; j < itemCount; j++) {
+            const p = products[(startIdx + j) % products.length];
+            items.push({
+                productId: p.id,
+                quantity: randomBetween(1, 50),
+                unitPrice: Number(p.unitPrice) * 0.8,
+            });
+        }
+        await createPurchaseOrder(admin.id, {
+            adminId: admin.id,
+            supplierId: supplier.id,
+            shopId: shop.id,
+            orderDate: new Date(Date.now() - randomBetween(0, 30) * 24 * 60 * 60 * 1000),
+            arrived: Math.random() > 0.2,
+            items,
+        });
+    }
+    console.log('  Created 50 purchase orders.');
+
+    console.log('Seeding customer orders...');
+    for (let i = 0; i < 100; i++) {
+        const shop = shops[i % shops.length];
+        const startIdx = (i * 7) % products.length;
+        const items = [];
+        const itemCount = Math.min(randomBetween(1, 5), products.length);
+        for (let j = 0; j < itemCount; j++) {
+            const p = products[(startIdx + j) % products.length];
+            items.push({
+                productId: p.id,
+                quantity: randomBetween(
+                    1,
+                    Math.min(10, p.inventories.find((inv) => inv.shopId === shop.id)?.quantity || 100),
+                ),
+                unitPrice: p.unitPrice,
+            });
+        }
+        await createCustomerOrder(admin.id, {
+            adminId: admin.id,
+            shopId: shop.id,
+            orderDate: new Date(Date.now() - randomBetween(0, 30) * 24 * 60 * 60 * 1000),
+            items,
+        });
+    }
+    console.log('  Created 100 customer orders.');
+
+    console.log('Large seed complete: 10 shops, 50 suppliers, 1000 products, 50 POs, 100 COs.');
+}
