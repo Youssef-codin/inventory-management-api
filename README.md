@@ -2,6 +2,8 @@
 
 A robust, multi-tenant inventory management REST API built with Node.js, Express, TypeScript, and Prisma. The system supports multiple shops, each with independent inventory tracking, customer orders, and purchase orders.
 
+**Performance:** With Redis caching, the API handles 450+ req/s with sub-3ms average latency under 100 concurrent users (74% reduction in p95 latency).
+
 ## Table of Contents
 
 - [Features](#features)
@@ -60,6 +62,8 @@ The quickest way to run the project is with Docker.
    | `JWT_SECRET`   | Secret key for signing JWT tokens | `your-secret-key`                                                          |
    | `REDIS_URL`    | Redis connection string            | `redis://:yourPassword@localhost:6380`                                     |
 
+> **Note:** When running inside Docker, use `redis://:password@redis:6379` (internal network). When running locally on the host, use `redis://:password@localhost:6380` (exposed port).
+
 3. **Start the containers:**
 
    ```bash
@@ -67,7 +71,7 @@ The quickest way to run the project is with Docker.
    ```
 
 
-   This will start both the API server on port `3000` and a PostgreSQL instance on port `5433`.
+   This will start both the API server on port `3000`, a PostgreSQL instance on port `5433`, and Redis on port `6380`.
 
 ## Local Setup (without Docker)
 
@@ -155,6 +159,26 @@ Load tested with [k6](https://k6.io/) using 100 VUs over 55 seconds (15s ramp-up
 - `GET /purchase-order/:id` - Purchase order lookups
 
 Cache is automatically invalidated on create/update/delete operations.
+
+**Reproducing the Benchmarks:**
+```bash
+# 1. Seed the large dataset
+npm run seed:large
+
+# 2. Test WITHOUT Redis - comment out initRedis() in src/app.ts
+# Then start the server:
+docker compose up -d
+
+# 3. Run the baseline test (without Redis)
+k6 run --summary-export=docs/baseline.json tests/perf/cache-benchmark.test.js
+
+# 4. Test WITH Redis - uncomment initRedis() in src/app.ts
+# Then restart the server:
+docker compose restart
+
+# 5. Run the Redis test
+k6 run --summary-export=docs/redis.json tests/perf/cache-benchmark.test.js
+```
 
 ## Authentication
 
@@ -258,3 +282,11 @@ The full OpenAPI specification is available in the `docs/` directory:
 | **Testing**     | Vitest, Supertest, k6  |
 | **Linting**     | Biome              |
 | **Containers**  | Docker             |
+
+## Scalability Considerations
+
+- **Redis caching** reduces database load and tail latency (~74% p95 improvement).
+- **Database indexed** on primary and foreign keys for fast lookups.
+- **Stateless API** with JWT auth enables horizontal scaling across multiple instances.
+- **Cache invalidation** on write operations ensures data consistency.
+- Tested to handle **450+ req/s** with **sub-3ms average latency** under **100 concurrent users**.
