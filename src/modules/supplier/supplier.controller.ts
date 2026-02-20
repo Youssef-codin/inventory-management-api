@@ -15,7 +15,7 @@ import {
     updateSupplier,
 } from './supplier.service';
 
-export async function getAllSuppliersHandler(req: Request, res: Response) {
+export async function getAllSuppliersHandler(_req: Request, res: Response) {
     const suppliers = await getAllSuppliers();
     return respond(res, 200, ok(suppliers));
 }

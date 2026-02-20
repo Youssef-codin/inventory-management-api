@@ -9,7 +9,7 @@ export function authenticate(req: Request, res: Response, next: NextFunction) {
     if (!authHeader || !authHeader.startsWith('Bearer '))
         throw new AppError(401, 'Invalid authorization header', ERROR_CODE.UNAUTHENTICATED);
 
-    const token = req.headers.authorization!.split(' ')[1];
+    const token = authHeader?.split(' ')[1];
     const decodedId = verifyJWT(token);
     res.locals.id = decodedId;
 

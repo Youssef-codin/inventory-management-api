@@ -10,7 +10,7 @@ import {
     updateAdmin,
 } from './admin.service';
 
-export async function getAllAdminsHandler(req: Request, res: Response) {
+export async function getAllAdminsHandler(_req: Request, res: Response) {
     const admins = await getAllAdmins();
     return respond(res, 200, ok(admins));
 }

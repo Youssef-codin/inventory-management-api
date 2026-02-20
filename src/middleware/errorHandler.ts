@@ -51,7 +51,7 @@ export default function errorHandler(error: unknown, req: Request, res: Response
         status = 401;
         message = 'Invalid token';
         code = ERROR_CODE.UNAUTHENTICATED;
-    } else if (error instanceof SyntaxError && (error as any).status === 400 && 'body' in error) {
+    } else if (error instanceof SyntaxError && 'body' in error) {
         status = 400;
         message = 'Invalid JSON payload';
         code = ERROR_CODE.VALIDATION_FAILED;

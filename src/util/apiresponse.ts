@@ -1,7 +1,7 @@
 import type { Response } from 'express';
 import type { ERROR_CODE } from '../middleware/errorHandler';
 
-export type ApiResponse<T = any> = {
+export type ApiResponse<T = unknown> = {
     success: boolean;
     data?: T;
     error?: {
