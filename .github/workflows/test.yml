@@ -25,6 +25,18 @@ jobs:
           --health-timeout 5s
           --health-retries 5
 
+      redis:
+        image: redis:7
+        env:
+          REDIS_PASSWORD: redispass123
+        ports:
+          - 6380:6379
+        options: >-
+          --health-cmd "redis-cli -h localhost -p 6379 -a redispass123 ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -54,3 +66,4 @@ jobs:
         env:
           DATABASE_URL: postgresql://test:test@localhost:5432/test
           JWT_SECRET: test-secret-for-ci
+          REDIS_URL: redis://:redispass123@localhost:6380
