@@ -1,10 +1,10 @@
-name: CI/CD Pipeline
+name: CI
 
 on:
   push:
-    branches: [main, master]
+    branches: [main, develop]
   pull_request:
-    branches: [main, master]
+    branches: [main, develop]
 
 jobs:
   test:
@@ -27,24 +27,15 @@ jobs:
 
       redis:
         image: redis:7
-        env:
-          REDIS_PASSWORD: redispass123
         ports:
           - 6379:6379
-        options: >-
-          --health-cmd "redis-cli -h localhost -p 6379 -a redispass123 ping"
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
 
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
+      - uses: actions/setup-node@v4
         with:
-          node-version: '24'
+          node-version: '20'
           cache: 'npm'
 
       - name: Install dependencies
@@ -55,15 +46,20 @@ jobs:
         env:
           DATABASE_URL: postgresql://test:test@localhost:5432/test
 
+      - name: Run database migrations
+        run: npm run migrate init
+        env:
+          DATABASE_URL: postgresql://test:test@localhost:5432/test
+
       - name: Run type check
         run: npm run type-check
 
-      - name: Run lint
+      - name: Run linter
         run: npm run lint
 
       - name: Run tests
         run: npm run test:coverage
         env:
           DATABASE_URL: postgresql://test:test@localhost:5432/test
-          JWT_SECRET: test-secret-for-ci
-          REDIS_URL: redis://:redispass123@localhost:6379
+          REDIS_URL: redis://localhost:6379
+          JWT_SECRET: test-secret
