@@ -63,22 +63,27 @@ jobs:
           echo "NODE_ENV=$NODE_ENV"
           echo "DATABASE_URL=$DATABASE_URL"
           echo "REDIS_URL=$REDIS_URL"
+          echo "JWT_SECRET=$JWT_SECRET"
         env:
           DATABASE_URL: postgresql://testuser:testpass@localhost:5432/testdb?schema=public
           REDIS_URL: redis://localhost:6379
+          JWT_SECRET: test-jwt-secret
 
       - name: Type check
         run: npm run type-check
         env:
           DATABASE_URL: postgresql://testuser:testpass@localhost:5432/testdb?schema=public
+          JWT_SECRET: test-jwt-secret
 
       - name: Lint
         run: npm run lint
         env:
           DATABASE_URL: postgresql://testuser:testpass@localhost:5432/testdb?schema=public
+          JWT_SECRET: test-jwt-secret
 
       - name: Run tests
         run: npm run test
         env:
           DATABASE_URL: postgresql://testuser:testpass@localhost:5432/testdb?schema=public
           REDIS_URL: redis://localhost:6379
+          JWT_SECRET: test-jwt-secret
