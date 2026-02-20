@@ -60,9 +60,13 @@ jobs:
 
       - name: Type check
         run: npm run type-check
+        env:
+          DATABASE_URL: postgresql://testuser:testpass@localhost:5432/testdb?schema=public
 
       - name: Lint
         run: npm run lint
+        env:
+          DATABASE_URL: postgresql://testuser:testpass@localhost:5432/testdb?schema=public
 
       - name: Run tests
         run: npm run test
