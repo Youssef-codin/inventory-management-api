@@ -10,34 +10,9 @@ jobs:
   test:
     runs-on: ubuntu-latest
 
-    services:
-      postgres:
-        image: postgres:17-alpine
-        env:
-          POSTGRES_USER: test
-          POSTGRES_PASSWORD: test
-          POSTGRES_DB: test
-        ports:
-          - 5432:5432
-        options: >-
-          --health-cmd pg_isready
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
-
-      redis:
-        image: redis:7-alpine
-        ports:
-          - 6379:6379
-        options: >-
-          --health-cmd "redis-cli ping"
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
-
     env:
-      DATABASE_URL: postgresql://test:test@localhost:5432/test
-      REDIS_URL: redis://localhost:6379
+      DATABASE_URL: postgresql://test:test@db:5432/test
+      REDIS_URL: redis://:redispass123@redis:6379
       JWT_SECRET: test-secret
 
     steps:
@@ -48,6 +23,22 @@ jobs:
           node-version: "20"
           cache: "npm"
 
+      - name: Install Docker Compose
+        run: |
+          sudo curl -L "https://github.com/docker/compose/releases/download/v2.24.0/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
+          sudo chmod +x /usr/local/bin/docker-compose
+
+      - name: Start services
+        run: docker-compose -f compose.ci.yaml up -d
+
+      - name: Wait for services to be healthy
+        run: |
+          echo "Waiting for PostgreSQL..."
+          timeout 30 bash -c 'until docker-compose -f compose.ci.yaml exec -T db pg_isready -U test -d test; do sleep 1; done'
+          echo "Waiting for Redis..."
+          timeout 30 bash -c 'until docker-compose -f compose.ci.yaml exec -T redis redis-cli -a redispass123 ping | grep -q PONG; do sleep 1; done'
+          echo "Services are ready!"
+
       - name: Install dependencies
         run: npm ci
 
@@ -55,10 +46,7 @@ jobs:
         run: npm run generate
 
       - name: Run database migrations
-        run: npm run migrate CI
-
-      - name: Run prisma gen
-        run: npm run gen
+        run: npx prisma db push
 
       - name: Run type check
         run: npm run type-check
@@ -68,3 +56,7 @@ jobs:
 
       - name: Run tests
         run: npm run test:coverage
+
+      - name: Stop services
+        if: always()
+        run: docker-compose -f compose.ci.yaml down
