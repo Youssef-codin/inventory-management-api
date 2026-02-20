@@ -26,9 +26,19 @@ jobs:
           --health-retries 5
 
       redis:
-        image: redis:7
+        image: redis:7-alpine
         ports:
           - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    env:
+      DATABASE_URL: postgresql://test:test@localhost:5432/test
+      REDIS_URL: redis://localhost:6379
+      JWT_SECRET: test-secret
 
     steps:
       - uses: actions/checkout@v4
@@ -43,13 +53,9 @@ jobs:
 
       - name: Generate Prisma Client
         run: npm run generate
-        env:
-          DATABASE_URL: postgresql://test:test@localhost:5432/test
 
       - name: Run database migrations
-        run: npm run migrate init
-        env:
-          DATABASE_URL: postgresql://test:test@localhost:5432/test
+        run: npx prisma db push
 
       - name: Run type check
         run: npm run type-check
@@ -59,7 +65,3 @@ jobs:
 
       - name: Run tests
         run: npm run test:coverage
-        env:
-          DATABASE_URL: postgresql://test:test@localhost:5432/test
-          REDIS_URL: redis://localhost:6379
-          JWT_SECRET: test-secret
