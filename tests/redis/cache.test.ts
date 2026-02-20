@@ -1,8 +1,43 @@
 import { beforeAll, describe, expect, it, vi } from 'vitest';
 import { cache, getRedisClient, initRedis } from '../../src/util/redis.js';
 
-// Set Redis URL for host machine access (tests run outside Docker)
-process.env.REDIS_URL = 'redis://:redispass123@localhost:6380';
+const memoryStore = new Map<string, string>();
+let connected = true;
+
+vi.mock('redis', () => {
+    return {
+        createClient: vi.fn(() => {
+            const client = {
+                on: vi.fn(),
+                connect: vi.fn().mockResolvedValue(undefined),
+                get: vi.fn((key: string) => {
+                    if (!connected) return Promise.resolve(null);
+                    return Promise.resolve(memoryStore.get(key) ?? null);
+                }),
+                set: vi.fn((key: string, value: string) => {
+                    if (!connected) return Promise.resolve(undefined);
+                    memoryStore.set(key, value);
+                    return Promise.resolve('OK');
+                }),
+                setEx: vi.fn((key: string, _ttl: number, value: string) => {
+                    if (!connected) return Promise.resolve(undefined);
+                    memoryStore.set(key, value);
+                    return Promise.resolve('OK');
+                }),
+                del: vi.fn((key: string) => {
+                    if (!connected) return Promise.resolve(undefined);
+                    memoryStore.delete(key);
+                    return Promise.resolve(1);
+                }),
+                quit: vi.fn().mockImplementation(() => {
+                    connected = false;
+                    return Promise.resolve(undefined);
+                }),
+            };
+            return client;
+        }),
+    };
+});
 
 describe('Redis - Graceful degradation', () => {
     beforeAll(async () => {
