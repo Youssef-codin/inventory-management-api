@@ -10,53 +10,66 @@ jobs:
   test:
     runs-on: ubuntu-latest
 
-    env:
-      DATABASE_URL: postgresql://test:test@localhost:5432/test
-      REDIS_URL: redis://:redispass123@localhost:6379
-      JWT_SECRET: test-secret
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_USER: testuser
+          POSTGRES_PASSWORD: testpass
+          POSTGRES_DB: testdb
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+
+      redis:
+        image: redis:7
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 6379:6379
 
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout code
+        uses: actions/checkout@v4
 
-      - uses: actions/setup-node@v4
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
         with:
-          node-version: "20"
-          cache: "npm"
-
-      - name: Install Docker Compose
-        run: |
-          sudo curl -L "https://github.com/docker/compose/releases/download/v2.24.0/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
-          sudo chmod +x /usr/local/bin/docker-compose
-
-      - name: Start services
-        run: docker-compose -f compose.ci.yaml up -d
-
-      - name: Wait for services to be healthy
-        run: |
-          echo "Waiting for PostgreSQL..."
-          timeout 30 bash -c 'until docker-compose -f compose.ci.yaml exec -T db pg_isready -U test -d test; do sleep 1; done'
-          echo "Waiting for Redis..."
-          timeout 30 bash -c 'until docker-compose -f compose.ci.yaml exec -T redis redis-cli -a redispass123 ping | grep -q PONG; do sleep 1; done'
-          echo "Services are ready!"
+          node-version: 24
+          cache: 'npm'
 
       - name: Install dependencies
         run: npm ci
 
-      - name: Generate Prisma Client
-        run: npm run generate
+      - name: Generate Prisma client
+        run: npm run gen
 
-      - name: Run database migrations
-        run: npx prisma db push
+      - name: Run migrations
+        run: npx prisma migrate deploy
+        env:
+          DATABASE_URL: postgresql://testuser:testpass@localhost:5432/testdb?schema=public
 
-      - name: Run type check
+      - name: Print environment variables
+        run: |
+          echo "NODE_ENV=$NODE_ENV"
+          echo "DATABASE_URL=$DATABASE_URL"
+          echo "REDIS_URL=$REDIS_URL"
+
+      - name: Type check
         run: npm run type-check
 
-      - name: Run linter
+      - name: Lint
         run: npm run lint
 
       - name: Run tests
-        run: npm run test:coverage
-
-      - name: Stop services
-        if: always()
-        run: docker-compose -f compose.ci.yaml down
+        run: npm run test
+        env:
+          DATABASE_URL: postgresql://testuser:testpass@localhost:5432/testdb?schema=public
+          REDIS_URL: redis://localhost:6379
