@@ -30,12 +30,13 @@ jobs:
         env:
           REDIS_PASSWORD: redispass123
         ports:
-          - 6380:6379
+          - 6379:6379
         options: >-
           --health-cmd "redis-cli -h localhost -p 6379 -a redispass123 ping"
           --health-interval 10s
           --health-timeout 5s
           --health-retries 5
+        command: ["redis-server", "--requirepass", "redispass123"]
 
     steps:
       - name: Checkout code
@@ -66,4 +67,4 @@ jobs:
         env:
           DATABASE_URL: postgresql://test:test@localhost:5432/test
           JWT_SECRET: test-secret-for-ci
-          REDIS_URL: redis://:redispass123@localhost:6380
+          REDIS_URL: redis://:redispass123@localhost:6379
